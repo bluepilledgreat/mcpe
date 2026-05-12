@@ -21,22 +21,11 @@ public:
 	int z;
     
 public:
-	TilePos()
-		: x(0),
-		  y(0),
-		  z(0)
-	{
-	}
-	TilePos(int x, int y, int z) : x(x), y(y), z(z)
-	{
-	}
-	TilePos(float x, float y, float z) : x(int(floorf(x))), y(int(floorf(y))), z(int(floorf(z)))
-	{
-	}
+	TilePos() : x(0), y(0), z(0) {}
+	TilePos(int x, int y, int z) : x(x), y(y), z(z) {}
+	TilePos(float x, float y, float z) : x(int(floorf(x))), y(int(floorf(y))), z(int(floorf(z))) { }
 	//@NOTE: Using floor fixes TilePos instantiation in negative coords
-	TilePos(const Vec3& pos) : x(int(floorf(pos.x))), y(int(floorf(pos.y))), z(int(floorf(pos.z)))
-	{
-	}
+	TilePos(const Vec3& pos) : x(int(floorf(pos.x))), y(int(floorf(pos.y))), z(int(floorf(pos.z))) { }
 	TilePos(const ChunkPos& pos, int y);
 
 	TilePos relative(Facing::Name facing, int steps = 1) const

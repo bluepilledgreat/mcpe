@@ -18,12 +18,8 @@ private:
 	void _init(const TilePos& pos);
     
 public:
-	ChunkPos() : x(0), z(0)
-	{
-	}
-	ChunkPos(int x, int z) : x(x), z(z)
-	{
-	}
+	ChunkPos() : x(0), z(0) {}
+	ChunkPos(int x, int z) : x(x), z(z) {}
 	ChunkPos(const Vec3& pos) { _init(pos); }
 	ChunkPos(const TilePos& pos) { _init(pos); }
 
