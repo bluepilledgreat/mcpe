@@ -16,11 +16,3 @@ const Vec3 Vec3::UNIT_X = Vec3(1, 0, 0), Vec3::NEG_UNIT_X = Vec3(-1, 0, 0);
 const Vec3 Vec3::UNIT_Y = Vec3(0, 1, 0), Vec3::NEG_UNIT_Y = Vec3(0, -1, 0);
 const Vec3 Vec3::UNIT_Z = Vec3(0, 0, 1), Vec3::NEG_UNIT_Z = Vec3(0, 0, -1);
 const Vec3 Vec3::MIN = Vec3(FLT_MIN, FLT_MIN, FLT_MIN), Vec3::MAX = Vec3(FLT_MAX, FLT_MAX, FLT_MAX);
-
-
-Vec3::Vec3(const TilePos& tilePos)
-	: x(float(tilePos.x)),
-	  y(float(tilePos.y)),
-	  z(float(tilePos.z))
-{
-}

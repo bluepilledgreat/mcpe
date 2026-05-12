@@ -35,7 +35,6 @@ public:
 	Vec3(int xyz) : x(float(xyz)), y(float(xyz)), z(float(xyz)) {}
 	Vec3(float x, float y, float z) : x(x), y(y), z(z) {}
 	Vec3(int x, int y, int z) : x(float(x)), y(float(y)), z(float(z)) {}
-	Vec3(const TilePos& tilePos);
 
 	Vec3 interpolateTo(const Vec3& to, float t) const
 	{
