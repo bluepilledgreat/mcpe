@@ -195,7 +195,7 @@ void Font::drawSlow(const std::string& str, int x, int y, const Color& color, bo
 #endif
 
 	MatrixStack::Ref mtx = MatrixStack::World.push();
-	mtx->translate(Vec3(x, y, 0.0f));
+	mtx->translate(Vec3(x, y, 0));
 
 	Tesselator& t = Tesselator::instance;
 	t.begin(4 * str.size());
