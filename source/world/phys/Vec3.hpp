@@ -38,10 +38,7 @@ public:
 
 	Vec3 interpolateTo(const Vec3& to, float t) const
 	{
-		float nx = x + (to.x - x) * t;
-		float ny = y + (to.y - y) * t;
-		float nz = z + (to.z - z) * t;
-		return Vec3(nx, ny, nz);
+		return *this + (to - *this) * t;
 	}
 
 	Vec3 vectorTo(const Vec3& to) const
@@ -93,7 +90,7 @@ public:
 		if (t < 0.0f || t > 1.0f)
 			return false;
 
-		intersection = *this + (endPoint - *this) * t;
+		intersection = interpolateTo(endPoint, t);
 		return true;
 	}
 
@@ -107,7 +104,7 @@ public:
 		if (t < 0.0f || t > 1.0f)
 			return false;
 
-		intersection = *this + (endPoint - *this) * t;
+		intersection = interpolateTo(endPoint, t);
 		return true;
 	}
 
@@ -121,7 +118,7 @@ public:
 		if (t < 0.0f || t > 1.0f)
 			return false;
 
-		intersection = *this + (endPoint - *this) * t;
+		intersection = interpolateTo(endPoint, t);
 		return true;
 	}
 
