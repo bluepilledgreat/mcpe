@@ -27,22 +27,14 @@ public:
 		  z(0)
 	{
 	}
-	TilePos(int x, int y, int z)
-		: x(x),
-		  y(y),
-		  z(z)
+	TilePos(int x, int y, int z) : x(x), y(y), z(z)
 	{
 	}
-	TilePos(float x, float y, float z)
-		: x(int(floorf(x))),
-		  y(int(floorf(y))),
-		  z(int(floorf(z)))
+	TilePos(float x, float y, float z) : x(int(floorf(x))), y(int(floorf(y))), z(int(floorf(z)))
 	{
 	}
-	TilePos(const Vec3& pos) //@NOTE: Using floor fixes TilePos instantiation in negative coords
-		: x(int(floorf(pos.x))),
-		  y(int(floorf(pos.y))),
-		  z(int(floorf(pos.z)))
+	//@NOTE: Using floor fixes TilePos instantiation in negative coords
+	TilePos(const Vec3& pos) : x(int(floorf(pos.x))), y(int(floorf(pos.y))), z(int(floorf(pos.z)))
 	{
 	}
 	TilePos(const ChunkPos& pos, int y);
