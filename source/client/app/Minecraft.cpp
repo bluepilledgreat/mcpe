@@ -67,6 +67,11 @@ const char* Minecraft::progressMessages[] =
 	"Saving chunks",
 };
 
+static AppPlatform* platform()
+{
+	return AppPlatform::singleton();
+}
+
 Minecraft::Minecraft()
 {
 	m_pOptions = nullptr;
@@ -250,7 +255,7 @@ void Minecraft::resetInputMethod()
 int Minecraft::getLicenseId()
 {
 	if (m_licenseID < 0)
-		m_licenseID = AppPlatform::singleton()->checkLicense();
+		m_licenseID = platform()->checkLicense();
 
 	return m_licenseID;
 }
@@ -270,7 +275,7 @@ void Minecraft::releaseMouse()
 	// the mouse handler, but we don't have access to the platform
 	// from there!
 	recenterMouse();
-	AppPlatform::singleton()->setMouseGrabbed(false);
+	platform()->setMouseGrabbed(false);
 }
 
 void Minecraft::grabMouse()
@@ -287,7 +292,7 @@ void Minecraft::grabMouse()
 	if (useController() || useTouchscreen())
 		return; // don't actually try to grab the mouse
 
-	AppPlatform::singleton()->setMouseGrabbed(true);
+	platform()->setMouseGrabbed(true);
 }
 
 void Minecraft::recenterMouse()
@@ -295,7 +300,7 @@ void Minecraft::recenterMouse()
 	if (useController() || useTouchscreen())
 		return;
 
-	AppPlatform::singleton()->recenterMouse();
+	platform()->recenterMouse();
 }
 
 void Minecraft::setScreen(Screen* pScreen)
@@ -361,13 +366,13 @@ void Minecraft::setScreen(Screen* pScreen)
 
 void Minecraft::saveOptions()
 {
-	if (AppPlatform::singleton()->hasFileSystemAccess())
+	if (platform()->hasFileSystemAccess())
 		getOptions()->save().join();
 }
 
 void Minecraft::saveOptionsAsync()
 {
-	if (AppPlatform::singleton()->hasFileSystemAccess())
+	if (platform()->hasFileSystemAccess())
 		getOptions()->save();
 }
 
@@ -763,7 +768,7 @@ void Minecraft::tickMouse()
 	if (useController() || useTouchscreen())
 		return; // don't actually try to recenter the mouse
 
-    if (AppPlatform::singleton()->getRecenterMouseEveryTick()) // just for SDL1
+    if (platform()->getRecenterMouseEveryTick()) // just for SDL1
         recenterMouse();
 }
 
@@ -781,7 +786,7 @@ void Minecraft::handleTextPaste(const std::string& text)
 
 void Minecraft::handleTextPaste()
 {
-	std::string text = AppPlatform::singleton()->getClipboardText();
+	std::string text = platform()->getClipboardText();
 	if (!text.empty())
 		handleTextPaste(text);
 }
@@ -1022,7 +1027,7 @@ void Minecraft::update()
 {
 	m_timer.advanceTime(isGamePaused() && m_pLevel);
 
-	AppPlatform::singleton()->tick();
+	platform()->tick();
 
 	if (m_pRakNetInstance && m_pNetEventCallback)
 	{

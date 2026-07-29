@@ -106,7 +106,7 @@ void NinecraftApp::_initRenderMaterials()
 
 void NinecraftApp::_initInput()
 {
-	m_bIsTouchscreen = platform()->isTouchscreen();
+	m_bIsTouchscreen = AppPlatform::singleton()->isTouchscreen();
 
 	resetInputMethod();
 
@@ -383,10 +383,10 @@ void NinecraftApp::update()
 
 	Multitouch::commit();
 
-	GameControllerHandler* pControllerHandler = platform()->getGameControllerHandler();
+	GameControllerHandler* pControllerHandler = AppPlatform::singleton()->getGameControllerHandler();
 	if (pControllerHandler)
 	{
-    pControllerHandler->refresh();
+		pControllerHandler->refresh();
 	}
 
 	Minecraft::update();

@@ -87,7 +87,7 @@ Options::Options(Minecraft* mc, const std::string& folderPath) :
 	, m_serverVisibleDefault("mp_server_visible_default", "options.serverVisibleDefault", true)
 	, m_autoJump("ctrl_autojump", "options.autoJump", AppPlatform::singleton()->isTouchscreen())
 	, m_debugText("info_debugtext", "options.debugText", false)
-	, m_blockOutlines("gfx_blockoutlines", "options.blockOutlines", !mc->platform()->isTouchscreen())
+	, m_blockOutlines("gfx_blockoutlines", "options.blockOutlines", !AppPlatform::singleton()->isTouchscreen())
 	, m_fancyGrass("gfx_fancygrass", "options.fancyGrass", true)
 	, m_biomeColors("gfx_biomecolors", "options.biomeColors", true)
 	, m_splitControls("ctrl_split", "options.splitControls", false)
@@ -685,7 +685,7 @@ void Options::initResourceDependentOptions()
 	if (!Screen::isMenuPanoramaAvailable())
 		m_menuPanorama.set(false);
 
-	if (!m_pMinecraft->platform()->isVSyncSwitchable())
+	if (!AppPlatform::singleton()->isVSyncSwitchable())
 		m_vSync.set(true);
 }
 
@@ -860,7 +860,7 @@ std::string FancyGraphicsOption::getMessage() const
 
 void VsyncOption::apply()
 {
-	m_pMinecraft->platform()->setVSyncEnabled(get());
+	AppPlatform::singleton()->setVSyncEnabled(get());
 }
 
 void LogoTypeOption::apply()
