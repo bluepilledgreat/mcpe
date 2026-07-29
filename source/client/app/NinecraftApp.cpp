@@ -56,11 +56,13 @@ void NinecraftApp::_initResourceLoaders()
 
 void NinecraftApp::_initOptions()
 {
+	AppPlatform& platform = *AppPlatform::singleton();
+
 	// Must be loaded before options, certain options states are forced based on this
 	_reloadPatchData();
 
-	if (AppPlatform::singleton()->hasFileSystemAccess())
-		m_pOptions = new Options(this, AppPlatform::singleton()->m_externalStorageDir);
+	if (platform.hasFileSystemAccess())
+		m_pOptions = new Options(this, platform.m_externalStorageDir);
 	else
 		m_pOptions = new Options(this);
 
@@ -351,17 +353,22 @@ void NinecraftApp::setupRenderer()
 
 void NinecraftApp::onGraphicsReset()
 {
-	AppPlatform::singleton()->_fireAppSuspended();
-	AppPlatform::singleton()->_fireAppResumed();
+	AppPlatform& platform = *AppPlatform::singleton();
+
+	platform._fireAppSuspended();
+	platform._fireAppResumed();
 }
 
 void NinecraftApp::teardown()
 {
+	AppPlatform& platform = *AppPlatform::singleton();
+	SoundSystem& soundSystem = *platform.getSoundSystem();
+
 	TileEntityFactory::teardownTileEntities();
 	teardownRenderer();
 	Resource::teardownLoaders();
 	// Stop our SoundSystem before we nuke our sound buffers and cause it to implode
-	AppPlatform::singleton()->getSoundSystem()->stopEngine();
+	soundSystem.stopEngine();
 }
 
 void NinecraftApp::teardownRenderer()

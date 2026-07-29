@@ -441,7 +441,7 @@ int main(int argc, char *argv[])
 	// Start MCPE
 	UsedAppPlatform* appPlatform = new UsedAppPlatform(storagePath, window);
 	appPlatform->m_externalStorageDir = storagePath;
-  appPlatform->setVSyncEnabled(true);
+	appPlatform->setVSyncEnabled(true);
 	g_pApp = new NinecraftApp;
 	g_pApp->init();
 	
