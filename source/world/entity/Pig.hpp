@@ -12,7 +12,7 @@
 class Pig : public Animal
 {
 public:
-	Pig(Level* pLevel);
+	Pig(TileSource& source);
 
 public:
 	std::string getAmbientSound() const override { return "mob.pig"; };
@@ -20,9 +20,9 @@ public:
 	std::string getHurtSound() const override { return "mob.pig"; }
 	int getDeathLoot() const override;
 	int getMaxHealth() const override { return 10; }
-	bool interact(Player*) override { return false; }
+	bool interact(Player*) override;
 
 	bool hasSaddle() const { return false; }
 	void setSaddle(bool b);
-	Entity* getBreedOffspring(Animal* pOther) { return new Pig(m_pLevel); }
+	Entity* getBreedOffspring(Animal* pOther) { return new Pig(*m_pTileSource); }
 };

@@ -1,7 +1,8 @@
 #include "Arrow.hpp"
 #include "Mob.hpp"
-#include "world/level/Level.hpp"
 #include "nbt/CompoundTag.hpp"
+#include "world/level/Level.hpp"
+#include "world/level/TileSource.hpp"
 
 const unsigned int Arrow::ARROW_BASE_DAMAGE = 4;
 
@@ -22,34 +23,38 @@ void Arrow::_init()
     m_owner = nullptr;
 }
 
-Arrow::Arrow(Level* pLevel) : Entity(pLevel)
+Arrow::Arrow(TileSource& source)
+    : Entity(source)
 {
     _init();
 }
 
-Arrow::Arrow(Level* pLevel, const Vec3& pos) : Entity(pLevel)
+Arrow::Arrow(TileSource& source, const Vec3& pos, bool isPlayerOwned)
+    : Entity(source)
 {
     _init();
 
 	setPos(pos);
+    m_bIsPlayerOwned = isPlayerOwned;
 }
 
-Arrow::Arrow(Level* pLevel, Mob* pMob) : Entity(pLevel)
+Arrow::Arrow(Mob& mob)
+    : Entity(mob.getTileSource())
 {
     _init();
 
-    m_owner = pMob;
+    m_owner = &mob;
     m_bIsPlayerOwned = m_owner->isPlayer();
-    moveTo(Vec3(pMob->m_pos.x, pMob->m_pos.y + pMob->getHeadHeight(), pMob->m_pos.z), Vec2(pMob->m_rot.y, pMob->m_rot.x));
+    moveTo(Vec3(mob.m_pos.x, mob.m_pos.y + mob.getHeadHeight(), mob.m_pos.z), mob.m_rot);
     
-    m_pos.x -= Mth::cos(m_rot.y / 180.0f * M_PI) * 0.16f;
+    m_pos.x -= Mth::cos(m_rot.yaw / 180.0f * M_PI) * 0.16f;
     m_pos.y -= 0.1f;
-    m_pos.z -= Mth::sin(m_rot.y / 180.0f * M_PI) * 0.16f;
+    m_pos.z -= Mth::sin(m_rot.yaw / 180.0f * M_PI) * 0.16f;
     setPos(m_pos);
 
-    m_vel.x = -Mth::sin(m_rot.y / 180.0f * M_PI) * Mth::cos(m_rot.x / 180.0f * M_PI);
-    m_vel.z = Mth::cos(m_rot.y / 180.0f * M_PI) * Mth::cos(m_rot.x / 180.0f * M_PI);
-    m_vel.y = -Mth::sin(m_rot.x / 180.0f * M_PI);
+    m_vel.x = -Mth::sin(m_rot.yaw / 180.0f * M_PI) * Mth::cos(m_rot.pitch / 180.0f * M_PI);
+    m_vel.z =  Mth::cos(m_rot.yaw / 180.0f * M_PI) * Mth::cos(m_rot.pitch / 180.0f * M_PI);
+    m_vel.y = -Mth::sin(m_rot.pitch / 180.0f * M_PI);
     shoot(m_vel, 1.5f, 1.0f);
 }
 
@@ -70,14 +75,14 @@ void Arrow::shoot(Vec3 vel, float speed, float r)
 
 void Arrow::_lerpMotion(const Vec3& vel)
 {
-    float len = vel.length();
-    m_oRot.y = m_rot.y = Mth::atan2(vel.x, vel.z) * 180.0f / M_PI;
-    m_oRot.x = m_rot.x = Mth::atan2(vel.y, len) * 180.0f / M_PI;
+    float len = Vec2(vel.x, vel.z).length();
+    m_oRot.yaw = m_rot.yaw = Mth::atan2(vel.x, vel.z) * 180.0f / M_PI;
+    m_oRot.pitch = m_rot.pitch = Mth::atan2(vel.y, len) * 180.0f / M_PI;
 }
 
 void Arrow::_lerpMotion2(const Vec3& vel)
 {
-    if (m_oRot.x == 0.0f && m_oRot.y == 0.0f)
+    if (m_oRot == Rot2::ZERO)
     {
         return _lerpMotion(vel);
     }
@@ -101,7 +106,7 @@ void Arrow::tick()
 
     if (m_bInGround)
     {
-        if (m_pLevel->getTile(m_tilePos) == m_lastTile)
+        if (m_pTileSource->getTile(m_tilePos) == m_lastTile)
         {
             ++m_life;
             if (m_life == 1200)
@@ -124,21 +129,21 @@ void Arrow::tick()
         ++m_flightTime;
     }
 
-    Vec3 future_pos = m_pos + m_vel;
-    HitResult hit_result = m_pLevel->clip(m_pos, future_pos);
-    if (hit_result.isHit()) 
+    Vec3 futurePos = m_pos + m_vel;
+    HitResult hitResult = m_pTileSource->clip(m_pos, futurePos, false, true);
+    if (hitResult.isHit())
     {
-        future_pos = hit_result.m_hitPos;
+        futurePos = hitResult.m_hitPos;
     }
 
-    Entity* hit_ent = nullptr;
+    Entity* hitEnt = nullptr;
     AABB hitbox = m_hitbox;
     hitbox.expand(m_vel.x, m_vel.y, m_vel.z).grow(1.0f);
-    EntityVector entities = m_pLevel->getEntities(this, hitbox);
+    const std::vector<Entity*>& entities = m_pTileSource->getEntities(this, hitbox);
     
     float max_dist = 0.0f;
     constexpr float var10 = 0.3f;
-    for (EntityVector::iterator it = entities.begin(); it != entities.end(); it++)
+    for (std::vector<Entity*>::const_iterator it = entities.begin(); it != entities.end(); it++)
     {
         Entity* ent = *it;
         if (ent->isPickable() && (ent != m_owner || m_flightTime >= 5)) 
@@ -146,29 +151,29 @@ void Arrow::tick()
             AABB aabb = ent->m_hitbox;
             aabb.grow(var10);
             // these Vec3's are copied in the TilePos::clip fn, so no need to create them over and over like in b1.2
-            HitResult hit = aabb.clip(m_pos, future_pos);
+            HitResult hit = aabb.clip(m_pos, futurePos);
             if (hit.isHit())
             {
                 float distance = m_pos.distanceTo(hit.m_hitPos);
                 if (distance < max_dist || max_dist == 0.0f)
                 {
-                    hit_ent = ent;
+                    hitEnt = ent;
                     max_dist = distance;
                 }
             }
         }
     }
 
-    if (hit_ent != nullptr)
+    if (hitEnt != nullptr)
     {
-        hit_result = HitResult(hit_ent);
+        hitResult = HitResult(hitEnt);
     }
 
-    if (hit_result.isHit())
+    if (hitResult.isHit())
     {
-        if (hit_result.m_pEnt != nullptr)
+        if (hitResult.m_pEnt != nullptr)
         {
-            if (hit_result.m_pEnt->hurt(m_owner, ARROW_BASE_DAMAGE))
+            if (hitResult.m_pEnt->hurt(m_owner, ARROW_BASE_DAMAGE))
             {
                 m_pLevel->playSound(this, "random.drr", 1.0f, 1.2f / (sharedRandom.nextFloat() * 0.2f + 0.9f));
                 remove();
@@ -176,16 +181,16 @@ void Arrow::tick()
             else 
             {
                 m_vel *= -0.1f;
-                m_rot.y += 180.0f;
-                m_oRot.y += 180.0f;
+                m_rot.yaw += 180.0f;
+                m_oRot.yaw += 180.0f;
                 m_flightTime = 0;
             }
         }
         else 
         {
-            m_tilePos = hit_result.m_tilePos;
-            m_lastTile = m_pLevel->getTile(m_tilePos);
-            m_vel = hit_result.m_hitPos - m_pos;
+            m_tilePos = hitResult.m_tilePos;
+            m_lastTile = m_pTileSource->getTile(m_tilePos);
+            m_vel = hitResult.m_hitPos - m_pos;
             m_pos -= (m_vel / m_pos.length() * 0.05f);
             m_pLevel->playSound(this, "random.drr", 1.0f, 1.2f / (sharedRandom.nextFloat() * 0.2f + 0.9f));
             m_bInGround = true;
@@ -194,28 +199,27 @@ void Arrow::tick()
     }
 
     m_pos += m_vel;
-    float var17 = m_vel.length();
-    m_rot.y = Mth::atan2(m_vel.x, m_vel.z) * 180.0f / M_PI;
+    float lengthVel2 = Vec2(m_vel.x, m_vel.z).length();
+    m_rot.yaw = Mth::atan2(m_vel.x, m_vel.z) * 180.0f / M_PI;
 
-    for (m_rot.x = Mth::atan2(m_vel.y, var17) * 180.0f / M_PI; m_rot.x - m_oRot.x < -180.0f; m_oRot.x -= 360.0f);
+    for (m_rot.pitch = Mth::atan2(m_vel.y, lengthVel2) * 180.0f / M_PI; m_rot.pitch - m_oRot.pitch < -180.0f; m_oRot.pitch -= 360.0f);
 
-    while (m_rot.x - m_oRot.x >= 180.0f)
+    while (m_rot.pitch - m_oRot.pitch >= 180.0f)
     {
-        m_oRot.x += 360.0f;
+        m_oRot.pitch += 360.0f;
     }
 
-    while (m_rot.y - m_oRot.y < -180.0f)
+    while (m_rot.yaw - m_oRot.yaw < -180.0f)
     {
-        m_oRot.y -= 360.0f;
+        m_oRot.yaw -= 360.0f;
     }
 
-    while (m_rot.y - m_oRot.y >= 180.0f)
+    while (m_rot.yaw - m_oRot.yaw >= 180.0f)
     {
-        m_oRot.y += 360.0f;
+        m_oRot.yaw += 360.0f;
     }
 
-    m_rot.x = m_oRot.x + (m_rot.x - m_oRot.x) * 0.2f;
-    m_rot.y = m_oRot.y + (m_rot.y - m_oRot.y) * 0.2f;
+    m_rot = m_oRot + (m_rot - m_oRot) * 0.2f;
     float dampening = 0.99f;
     if (isInWater())
     {

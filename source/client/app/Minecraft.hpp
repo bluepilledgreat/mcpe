@@ -45,9 +45,6 @@ private:
 	GameMode* _createGameMode(GameType gameType, Level& level);
 	void _initGameModes(Level& level);
 
-protected:
-	void _reloadInput();
-
 public:
 	int getLicenseId();
 	void setScreen(Screen * pScreen);
@@ -80,11 +77,14 @@ public:
 	void handlePointerPressedButtonRelease();
 	void handleKeyboardClosed();
 	void resetInput();
+	void reloadInput();
+	void resetInputMethod();
 	void sendMessage(const std::string& message);
 	void respawnPlayer();
 	void freeResources(bool bCopyMap);
+	void unloadLevel(bool bCopyMap);
 	std::string getVersionString(const std::string& str = Util::EMPTY_STRING) const;
-	bool isTouchscreen() const;
+	bool useTouchscreen() const;
 	bool useSplitControls() const;
 	bool useController() const;
 
@@ -104,7 +104,7 @@ public:
 	float getBestScaleForThisScreenSize(int width, int height);
 	void setupLevelRendering(Level* pLevel, Dimension* pDimension, Mob* pCamera);
 	void onClientStartedLevel(Level* pLevel, LocalPlayer* pLocalPlayer);
-	void generateLevel(const std::string& unused, Level* pLevel);
+	void generateLevel(const std::string& unused, Level& level);
 	void prepareLevel(const std::string& unused);
 	bool isOnline() const;
 	bool isOnlineClient() const;
@@ -120,11 +120,17 @@ public:
 	//const Entity& getCameraEntity() const { return *m_pCameraEntity; }
 
 private:
+	static Minecraft* _singletonPtr;
     // Value provided by the OS
     static float _renderScaleMultiplier;
+	static InputMethod::Type _inputMethod;
+
 public:
-    static float getRenderScaleMultiplier() { return _renderScaleMultiplier; }
-    static void setRenderScaleMultiplier(float value) { _renderScaleMultiplier = value; }
+	static Minecraft& singleton() { return *_singletonPtr; }
+    static float GetRenderScaleMultiplier() { return _renderScaleMultiplier; }
+    static void SetRenderScaleMultiplier(float value) { _renderScaleMultiplier = value; }
+	static InputMethod::Type GetInputMethod() { return _inputMethod; }
+	static void SetInputMethod(InputMethod::Type inputType) { _inputMethod = inputType; }
     
 public:
 	static int width, height;
@@ -170,6 +176,7 @@ public:
 	int m_progressPercent;
 	Timer m_timer;
 	bool m_bPreparingLevel;
+	bool m_bPendingResize;
 	LevelStorageSource* m_pLevelStorageSource; // TODO
 	int field_D9C;
 	int field_DA0;

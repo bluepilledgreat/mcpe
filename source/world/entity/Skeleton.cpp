@@ -1,6 +1,7 @@
 #include "Skeleton.hpp"
+#include "world/level/TileSource.hpp"
 
-Skeleton::Skeleton(Level* pLevel) : Monster(pLevel)
+Skeleton::Skeleton(TileSource& source) : Monster(source)
 {
 	m_pDescriptor = &EntityTypeDescriptor::skeleton;
 	m_renderType = RENDER_SKELETON;
@@ -9,11 +10,11 @@ Skeleton::Skeleton(Level* pLevel) : Monster(pLevel)
 
 void Skeleton::aiStep()
 {
-	if (m_pLevel->isDay())
+	if (m_pTileSource->getDimensionConst().isDay())
 	{
 		float brightness = getBrightness(1.0f);
 		if (brightness > 0.5f
-			&& m_pLevel->canSeeSky(this->m_pos)
+			&& m_pTileSource->canSeeSky(this->m_pos)
 			&& m_random.nextFloat() * 30.0f < (brightness - 0.4f) * 2.0f)
 		{
 			this->m_fireTicks = 300;
@@ -31,9 +32,9 @@ void Skeleton::checkHurtTarget(Entity* ent, float f)
 		float delta_z = ent->m_pos.z - m_pos.z;
 		if (m_attackTime == 0)
 		{
-			Arrow* arrow = new Arrow(m_pLevel, this);
+			Arrow* arrow = new Arrow(*this);
 			arrow->m_pos.y += 1;
-			float var8 = ent->m_pos.y - 0.2f - arrow->m_pos.y;
+			float var8 = ent->m_pos.y + ent->getHeadHeight() - 0.2f - arrow->m_pos.y;
 			float var10 = Mth::sqrt(delta_x * delta_x + delta_z * delta_z) * 0.2f;
 			m_pLevel->playSound(this, "random.bow", 1.0f, 1.0f / (m_random.nextFloat() * 0.4f + 0.8f));
 			m_pLevel->addEntity(arrow);
@@ -41,7 +42,7 @@ void Skeleton::checkHurtTarget(Entity* ent, float f)
 			m_attackTime = 30;
 		}
 
-		m_rot.y = (Mth::atan2(delta_z, delta_x) * 180.0f / M_PI) - 90.0f;
+		m_rot.yaw = (Mth::atan2(delta_z, delta_x) * 180.0f / M_PI) - 90.0f;
 		m_bHoldGround = true;
 	}
 

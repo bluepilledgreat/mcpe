@@ -11,9 +11,9 @@ public:
     ~InventoryMenu();
 
     void slotsChanged(Container* container) override;
-    void removed(Player* player) override;
-    bool stillValid(Player* player) const override;
-    ItemStack quickMoveStack(int index) override;
+    void removed(Player& player) override;
+    bool stillValid(Player& player) const override;
+    ItemStack quickMoveStack(Container::SlotID slotId) override;
 
 public:
     CraftingContainer* m_pCraftSlots;

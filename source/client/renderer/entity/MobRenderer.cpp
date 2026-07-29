@@ -12,6 +12,7 @@
 #include "client/app/Minecraft.hpp"
 #include "renderer/ShaderConstants.hpp"
 #include "EntityRenderDispatcher.hpp"
+#include "client/renderer/Lighting.hpp"
 
 MobRenderer::MobRenderer(Model* pModel, float f)
 {
@@ -90,7 +91,7 @@ void MobRenderer::render(const Entity& entity, const Vec3& pos, float rot, float
 		MatrixStack::Ref matrix = MatrixStack::World.push();
 
 		m_pModel->m_attackTime = getAttackAnim(mob, a);
-		m_pModel->m_bRiding = false;
+		m_pModel->m_bRiding = mob.isRiding();
 		m_pModel->m_bIsBaby = mob.isBaby();
 
 		if (m_pArmorModel != nullptr)
@@ -100,8 +101,8 @@ void MobRenderer::render(const Entity& entity, const Vec3& pos, float rot, float
 			m_pArmorModel->m_attackTime = m_pModel->m_attackTime;
 		}
 
-		float aYaw = mob.m_oRot.x + (mob.m_rot.x - mob.m_oRot.x) * a;
-		float aPitch = mob.m_oRot.y + (mob.m_rot.y - mob.m_oRot.y) * a;
+		float aYaw = mob.m_oRot.yaw + (mob.m_rot.yaw - mob.m_oRot.yaw) * a;
+		float aPitch = mob.m_oRot.pitch + (mob.m_rot.pitch - mob.m_oRot.pitch) * a;
 		float fBob = getBob(mob, a);
 		float fSmth = mob.m_yBodyRotO + (mob.m_yBodyRot - mob.m_yBodyRotO) * a;
 
@@ -109,7 +110,7 @@ void MobRenderer::render(const Entity& entity, const Vec3& pos, float rot, float
 		setupRotations(mob, fBob, fSmth, matrix, a);
 
 		constexpr float fScale = 0.0625f; // the scale variable according to b1.2_02
-		matrix->scale(Vec3(-1.0f, -1.0f, 1.0f));
+		matrix->scale(Vec3(-1.0f, -1.0f, 1.0f)); // flip mobs right-side-up
 		scale(mob, matrix, a);
 		matrix->translate(Vec3(0.0f, -24.0f * fScale - (1.0f / 128.0f), 0.0f));
 
@@ -137,7 +138,7 @@ void MobRenderer::render(const Entity& entity, const Vec3& pos, float rot, float
 		additionalRendering(mob, a);
 
 		Color overlayColor = getOverlayColor(mob, a);
-		if (overlayColor.a > 0)
+		if (overlayColor.a > 0.0f)
 		{
 			currentShaderColor = overlayColor;
 			mce::MaterialPtr* pMaterial = m_pModel->m_pMaterial;
@@ -168,6 +169,8 @@ void MobRenderer::render(const Entity& entity, const Vec3& pos, float rot, float
 void MobRenderer::onGraphicsReset()
 {
 	m_pModel->onGraphicsReset();
+	if (m_pArmorModel)
+		m_pArmorModel->onGraphicsReset();
 }
 
 void MobRenderer::renderName(const Mob& mob, const Vec3& pos)
@@ -203,10 +206,10 @@ void MobRenderer::renderNameTag(const Mob& mob, const std::string& str, const Ve
 	matrix->translate(Vec3(pos.x + 0.0f, pos.y + 2.3f, pos.z));
 
 	// billboard the name towards the camera
-	matrix->rotate(-m_pDispatcher->m_rot.x, Vec3::UNIT_Y);
-	matrix->rotate(+m_pDispatcher->m_rot.y, Vec3::UNIT_X);
+	matrix->rotate(-m_pDispatcher->m_rot.yaw, Vec3::UNIT_Y);
+	matrix->rotate(+m_pDispatcher->m_rot.pitch, Vec3::UNIT_X);
 	matrix->scale(Vec3(-0.026667f, -0.026667f, 0.026667f));
-	
+
 	currentShaderColor = Color(0.0f, 0.0f, 0.0f, 0.25f);
 
 	Tesselator& t = Tesselator::instance;
@@ -221,6 +224,21 @@ void MobRenderer::renderNameTag(const Mob& mob, const std::string& str, const Ve
 	t.vertex(widthHalf + 1.0f, 8.0f, 0.0f);
 	t.vertex(widthHalf + 1.0f, -1.0f, 0.0f);
 	t.draw(m_materials.name_tag);
+
+	//@TODO: Come back here after implementing line width setting support in HAL.
+
+	if (m_pDispatcher->m_pMinecraft->getUiTheme() == UI_CONSOLE)
+	{
+		currentShaderColor = Color(0.0f, 1.0f, 0.0f, 1.0f); //@TODO: Currently hardcoded to green, but should be changed to use different colors for players like in Xbox 360 Edition.
+		t.begin(mce::PRIMITIVE_MODE_LINE_STRIP, 5);
+
+		t.vertex(-1.0f - widthHalf, -1.0f, 0.0f);
+		t.vertex(-1.0f - widthHalf, 8.0f, 0.0f);
+		t.vertex(widthHalf + 1.0f, 8.0f, 0.0f);
+		t.vertex(widthHalf + 1.0f, -1.0f, 0.0f);
+		t.vertex(-1.0f - widthHalf, -1.0f, 0.0f);
+		t.draw(m_materials.name_tag);
+	}
 
 	font->draw(str, -font->width(str) / 2, 0, 0x20FFFFFF);
 	font->draw(str, -font->width(str) / 2, 0, 0xFFFFFFFF);

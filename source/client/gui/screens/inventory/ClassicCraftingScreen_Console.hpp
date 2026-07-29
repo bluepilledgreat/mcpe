@@ -5,12 +5,12 @@
 class ClassicCraftingScreen_Console : public ContainerScreen
 {
 public:
-    ClassicCraftingScreen_Console(Inventory* inventory, const TilePos& tilePos, Level* level);
+    ClassicCraftingScreen_Console(Inventory* inventory, const TilePos& tilePos);
 
     void renderBackground() override;
 
 protected:
     void _renderLabels() override;
     void _renderBg(float partialTick) override;
-    SlotDisplay _createSlotDisplay(const Slot&);
+    SlotDisplay _createSlotDisplay(const Slot&) override;
 };

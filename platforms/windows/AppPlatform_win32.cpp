@@ -135,21 +135,6 @@ void AppPlatform_win32::showDialog(eDialogType type)
 	m_DialogType = type;
 }
 
-std::string AppPlatform_win32::getDateString(int time)
-{
-	time_t tt = time;
-	struct tm t;
-	// using the _s variant. For a different platform there's gmtime_r. This is not directly portable however.
-	gmtime_s(&t, &tt);
-
-	//format it with strftime
-	char buf[2048];
-	strftime(buf, sizeof buf, "%b %d %Y %H:%M:%S", &t);
-	//strftime(buf, sizeof buf, "%a %b %d %H:%M:%S %Z %Y", &t);
-
-	return std::string(buf);
-}
-
 bool AppPlatform_win32::doesTextureExist(const std::string& path) const
 {
 	return isRegularFile(path.c_str());
@@ -458,6 +443,22 @@ bool AppPlatform_win32::initGraphics(int width, int height)
 	setScreenSize(width, height);
 
 	return true;
+}
+
+void AppPlatform_win32::setVSyncEnabled(bool enabled)
+{
+#if MCE_GFX_API_OGL
+	xglSwapIntervalEXT(enabled ? 1 : 0);
+#endif
+}
+
+bool AppPlatform_win32::isVSyncSwitchable() const
+{
+#if MCE_GFX_API_OGL
+	return true;
+#else
+	return false;
+#endif
 }
 
 void AppPlatform_win32::createWindowSizeDependentResources(const Vec2& logicalSize, const Vec2& compositionScale)

@@ -61,7 +61,8 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT iMsg, WPARAM wParam, LPARAM lParam)
 				posY = Mouse::getY();
 			}
 			Mouse::feed(buttonType, buttonState, posX, posY);
-			Multitouch::feed(buttonType, buttonState, posX, posY, 0);
+			if (g_AppPlatform.isTouchscreen())
+				Multitouch::feed(buttonType, buttonState, posX, posY, 0);
 			break;
 		}
 
@@ -73,7 +74,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT iMsg, WPARAM wParam, LPARAM lParam)
 
 			Minecraft::width  = width;
 			Minecraft::height = height;
-			Minecraft::setRenderScaleMultiplier(1.0f); // assume no meddling with the DPI stuff
+			Minecraft::SetRenderScaleMultiplier(1.0f); // assume no meddling with the DPI stuff
 
 			g_AppPlatform.setScreenSize(width, height);
 
@@ -133,10 +134,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 {
 #if defined(_DEBUG) && defined(MOD_POPOUT_CONSOLE)
 	AllocConsole();
-	FILE* ostream;
-	FILE* istream;
-	freopen_s(&ostream, "CONOUT$", "w", stdout);
-	freopen_s(&istream, "CONIN$", "r", stdin);
+	freopen("CONOUT$", "w", stdout);
+	freopen("CONIN$", "r", stdin);
 	SetConsoleTitle(C_GAME_NAME " Debug Console");
 #endif
 
@@ -151,6 +150,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
 	if (!g_AppPlatform.initGraphics(Minecraft::width, Minecraft::height))
 		goto _cleanup;
+
+	g_AppPlatform.setVSyncEnabled(true);
 
 	g_pApp = new NinecraftApp;
 

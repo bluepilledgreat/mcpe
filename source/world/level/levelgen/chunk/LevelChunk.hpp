@@ -11,19 +11,98 @@
 #include <cstring>
 #include <vector>
 #include <algorithm>
+#include <map>
 #include "common/Random.hpp"
 #include "common/Utils.hpp"
 #include "client/renderer/LightLayer.hpp"
 #include "world/level/levelgen/chunk/ChunkPos.hpp"
 #include "world/level/levelgen/chunk/ChunkTilePos.hpp"
-#include "world/level/levelgen/chunk/DataLayer.hpp"
 
 class Level;
 class AABB;
 class Entity;
+class EntityType;
+class TileEntity;
 
 class LevelChunk
 {
+public:
+	// Previously called "DataLayer"
+	struct NibbleTileArray
+	{
+		inline NibbleTileArray()
+		{
+			array = new uint8_t[getSize()];
+            memset(array, 0, getSize());
+		}
+
+		inline ~NibbleTileArray()
+		{
+			delete[] array;
+		}
+
+		inline uint8_t get(int index) const
+		{
+			uint8_t byte = array[index >> 1];
+
+			if ((index & 1) == 0)
+			{
+				// get low bits
+				return byte & 0xF;
+			}
+			else
+			{
+				// get high bits
+				return (byte >> 4) & 0xF;
+			}
+		}
+
+		inline uint8_t get(const ChunkTilePos& pos) const
+		{
+			return get(pos.index());
+		}
+
+		inline bool set(int index, uint8_t value)
+		{
+			assert(value <= 15);
+
+			int idx = index >> 1;
+			uint8_t byte = array[idx];
+
+			if ((index & 1) == 0)
+			{
+				// low bits
+				if ((byte & 0xF) != value)
+				{
+					value &= 0xF;
+					array[idx] = (byte & 0xF0) | value;
+					return true;
+				}
+			}
+			else
+			{
+				// high bits
+				if ((byte >> 4) != value)
+				{
+					value &= 0xF;
+					array[idx] = (value << 4) | (byte & 0x0F);
+					return true;
+				}
+			}
+
+			return false;
+		}
+
+		inline bool set(const ChunkTilePos& pos, uint8_t value)
+		{
+			return set(pos.index(), value);
+		}
+
+		inline size_t getSize() const { return ChunkConstants::TILE_COUNT / 2; }
+
+		uint8_t* array;
+	};
+
 private:
 	void _init();
 protected:
@@ -39,6 +118,8 @@ public:
 	void lightGaps(const ChunkTilePos& pos);
 	void deleteBlockData();
 	void clearUpdateMap();
+
+	NibbleTileArray& getLight(const LightLayer& lightLayer);
 
 	virtual bool isAt(const ChunkPos& pos);
 	virtual int getHeightmap(const ChunkTilePos& pos);
@@ -61,6 +142,8 @@ public:
 	virtual void markUnsaved();
 	virtual int  countEntities();
 	virtual void getEntities(Entity* pEntExclude, const AABB&, std::vector<Entity*>& out);
+	virtual void getEntities(const EntityType& type, const AABB& aabb, std::vector<Entity*>& output) const;
+	virtual void getEntities(const EntityType& type, const AABB& aabb, Entity* pEntExclude, std::vector<Entity*>& output) const;
 	virtual TileID getTile(const ChunkTilePos& pos);
 	virtual bool setTile(const ChunkTilePos& pos, TileID tile);
 	virtual bool setTileAndData(const ChunkTilePos& pos, TileID tile, TileData data);
@@ -69,10 +152,18 @@ public:
 	virtual void setBlocks(uint8_t* pData, int y);
 	virtual int  getBlocksAndData(uint8_t* pData, int, int, int, int, int, int, int);
 	virtual int  setBlocksAndData(uint8_t* pData, int, int, int, int, int, int, int);
+	virtual TileEntity* getTileEntity(const ChunkTilePos& pos);
+	virtual void addTileEntity(TileEntity* tileEntity);
+	virtual void setTileEntity(const ChunkTilePos& pos, TileEntity* tileEntity);
+	virtual void removeTileEntity(const ChunkTilePos& pos);
 	virtual Random getRandom(int32_t l);
 	virtual void recalcHeight(const ChunkTilePos& pos);
 	virtual bool isEmpty();
 	//...
+
+	TileID* getTiles() { return m_pBlockData; }
+	NibbleTileArray& getTileData() { return m_tileData; }
+	const ChunkPos& getPos() const { return m_chunkPos; }
 
 public:
 	static bool touchedSky;
@@ -81,9 +172,9 @@ public:
 	int field_4;
 	bool m_bLoaded;
 	Level* m_pLevel;
-	DataLayer m_tileData;
-	DataLayer m_lightSky;
-	DataLayer m_lightBlk;
+	NibbleTileArray m_tileData;
+	NibbleTileArray m_lightSky;
+	NibbleTileArray m_lightBlk;
 	uint8_t m_heightMap[256];
 	uint8_t m_updateMap[256];
 	int field_228;
@@ -96,4 +187,5 @@ public:
 	int field_23C;
 	TileID* m_pBlockData;
 	std::vector<Entity*> m_entities[128 / 16];
+	std::map<ChunkTilePos, TileEntity*> m_tileEntities;
 };

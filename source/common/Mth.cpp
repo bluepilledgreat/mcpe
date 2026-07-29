@@ -48,13 +48,13 @@ float Mth::invSqrt(float number)
 	// they just stole it from Quake.
 
 	float x2, y;
-	const float threehalfs = 1.5F;
+	const float threehalfs = 1.5f;
 	union {
 		float f;
 		int32_t i;
 	} un;
 
-	x2   = number * 0.5F;
+	x2   = number * 0.5f;
 	un.f = number;                               // evil floating point bit level hacking
 	un.i = 0x5f3759df - ( un.i >> 1 );           // what the fuck?
 	y    = un.f;
@@ -103,6 +103,17 @@ float Mth::clamp(float x, float min, float max)
 }
 
 int Mth::clamp(int x, int min, int max)
+{
+	if (x > max)
+		return max;
+	if (x > min)
+		return x;
+	else
+		return min;
+	return max;
+}
+
+uint8_t Mth::clamp(uint8_t x, uint8_t min, uint8_t max)
 {
 	if (x > max)
 		return max;

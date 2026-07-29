@@ -37,6 +37,7 @@
 #include "client/player/input/Multitouch.hpp"
 
 #include "world/tile/SandTile.hpp"
+#include "world/level/TileSource.hpp"
 
 #include "client/renderer/GrassColor.hpp"
 #include "client/renderer/FoliageColor.hpp"
@@ -45,12 +46,14 @@
 #include "renderer/RenderContextImmediate.hpp"
 #include "client/renderer/LogoRenderer.hpp"
 
+Minecraft* Minecraft::_singletonPtr;
 float Minecraft::_renderScaleMultiplier = 1.0f;
 
 int Minecraft::width  = C_DEFAULT_SCREEN_WIDTH;
 int Minecraft::height = C_DEFAULT_SCREEN_HEIGHT;
-bool Minecraft::useAmbientOcclusion = false;
+bool Minecraft::useAmbientOcclusion = true;
 int Minecraft::customDebugId = 0;
+InputMethod::Type Minecraft::_inputMethod = InputMethod::KEYBOARD;
 
 //@HUH: For the demo, this is defined as TRUE.
 //@HUH: deadmau5 had camera cheats? That's interesting.
@@ -60,7 +63,7 @@ const char* Minecraft::progressMessages[] =
 {
 	"Locating server",
 	"Building terrain",
-	"Preparing",
+	"Preparing", // "Simulating world for a bit" on Java
 	"Saving chunks",
 };
 
@@ -95,6 +98,7 @@ Minecraft::Minecraft()
 	m_bIsTouchscreen = false;
 	m_progressPercent = 0;
 	m_bPreparingLevel = false;
+	m_bPendingResize = false;
 	m_pLevelStorageSource = nullptr; // TODO
 	field_D9C = 0;
 	field_DA0 = 0;
@@ -108,6 +112,8 @@ Minecraft::Minecraft()
 	m_fLastUpdated = 0;
 	m_fDeltaTime = 0;
 	m_lastInteractTime = 0;
+
+	_singletonPtr = this;
 }
 
 Minecraft::~Minecraft()
@@ -185,22 +191,29 @@ void Minecraft::_initGameModes(Level& level)
 	}
 }
 
-void Minecraft::_reloadInput()
+void Minecraft::reloadInput()
 {
 	if (m_pInputHolder)
 		delete m_pInputHolder;
 
-	if (isTouchscreen())
+	if (useTouchscreen())
 	{
 		m_pInputHolder = new TouchInputHolder(this, getOptions());
+
+		if (m_bGrabbedMouse)
+			platform()->setMouseGrabbed(false);
 	}
 	else if (useController())
 	{
 		m_pInputHolder = new CustomInputHolder(
 			new ControllerMoveInput(getOptions()),
 			new ControllerTurnInput(),
-			new ControllerBuildInput()
+			new ControllerBuildInput(),
+			true
 		);
+
+		if (m_bGrabbedMouse)
+			platform()->setMouseGrabbed(false);
 	}
 	else
 	{
@@ -209,6 +222,9 @@ void Minecraft::_reloadInput()
 			new MouseTurnInput(),
 			new MouseBuildInput()
 		);
+
+		if (m_bGrabbedMouse)
+			platform()->setMouseGrabbed(true);
 	}
 
 	m_mouseHandler.setTurnInput(m_pInputHolder->getTurnInput());
@@ -218,7 +234,17 @@ void Minecraft::_reloadInput()
 		m_pLocalPlayer->m_pMoveInput = m_pInputHolder->getMoveInput();
 	}
 
-	getOptions()->m_bUseMouseForDigging = !isTouchscreen();
+	getOptions()->m_bUseMouseForDigging = !useTouchscreen();
+}
+
+void Minecraft::resetInputMethod()
+{
+	if (platform()->hasGamepad())
+		SetInputMethod(InputMethod::CONTROLLER);
+	else if (platform()->isTouchscreen())
+		SetInputMethod(InputMethod::TOUCHSCREEN);
+	else
+		SetInputMethod(InputMethod::KEYBOARD);
 }
 
 int Minecraft::getLicenseId()
@@ -258,7 +284,7 @@ void Minecraft::grabMouse()
 	// This will call grabMouse again, so why are we calling it here?
 	//setScreen(nullptr);
 
-	if (useController() || isTouchscreen())
+	if (useController() || useTouchscreen())
 		return; // don't actually try to grab the mouse
 
 	AppPlatform::singleton()->setMouseGrabbed(true);
@@ -266,7 +292,7 @@ void Minecraft::grabMouse()
 
 void Minecraft::recenterMouse()
 {
-	if (useController() || isTouchscreen())
+	if (useController() || useTouchscreen())
 		return;
 
 	AppPlatform::singleton()->recenterMouse();
@@ -274,7 +300,6 @@ void Minecraft::recenterMouse()
 
 void Minecraft::setScreen(Screen* pScreen)
 {
-	float lastScale = getBestScaleForThisScreenSize(Minecraft::width, Minecraft::height);
 #ifndef ORIGINAL_CODE
 	if (pScreen == nullptr && !isLevelGenerated())
 	{
@@ -289,7 +314,7 @@ void Minecraft::setScreen(Screen* pScreen)
 		return;
 	}
 
-	if (pScreen && pScreen->isErrorScreen())
+	if (pScreen && (pScreen->isErrorScreen() || !pScreen->validate(this)))
 	{
 		// not in original
 		delete pScreen;
@@ -315,14 +340,7 @@ void Minecraft::setScreen(Screen* pScreen)
 		pScreen->init(this, Gui::GuiWidth, Gui::GuiHeight);
 	}
 
-	float scale = getBestScaleForThisScreenSize(Minecraft::width, Minecraft::height);
-
-	if (scale != lastScale)
-	{
-		sizeUpdate(Minecraft::width, Minecraft::height);
-		if (pScreen)
-			pScreen->initMenuPointer();
-	}
+	sizeUpdate(Minecraft::width, Minecraft::height);
 
 	if (pScreen)
 	{
@@ -371,19 +389,19 @@ bool Minecraft::isOnlineClient() const
 	return m_pLevel->m_bIsClientSide;
 }
 
-bool Minecraft::isTouchscreen() const
+bool Minecraft::useTouchscreen() const
 {
-	return m_bIsTouchscreen;
+	return GetInputMethod() == InputMethod::TOUCHSCREEN;
 }
 
 bool Minecraft::useSplitControls() const
 {
-	return !m_bIsTouchscreen || getOptions()->m_splitControls.get();
+	return !useTouchscreen() || getOptions()->m_splitControls.get();
 }
 
 bool Minecraft::useController() const
 {
-	return AppPlatform::singleton()->hasGamepad() && getOptions()->m_bUseController.get();
+	return GetInputMethod() == InputMethod::CONTROLLER;
 }
 
 void Minecraft::setGameMode(GameType gameType)
@@ -450,8 +468,13 @@ void Minecraft::handleBuildAction(const BuildActionIntention& action)
 			Entity* pTarget = m_hitResult.m_pEnt;
 			if (action.isAttack())
 			{
-				m_pRakNetInstance->send(new InteractPacket(player->m_EntityID, pTarget->m_EntityID, InteractPacket::ATTACK));
-				pGameMode->attack(player, pTarget);
+				InteractPacket pkt(player->m_EntityID, pTarget->m_EntityID, InteractPacket::ATTACK);
+
+				pkt.m_reliability = RELIABLE_ORDERED;
+				pkt.m_channel = CHANNEL_PLAYER_EVENTS;
+				m_pRakNetInstance->send(pkt);
+
+				pGameMode->attack(*player, *pTarget);
 				m_lastBlockBreakTime = getTimeMs();
 			}
 			else if (action.isInteract() && canInteract)
@@ -459,15 +482,19 @@ void Minecraft::handleBuildAction(const BuildActionIntention& action)
 				if (pTarget->interactPreventDefault())
 					bInteract = false;
 
-				m_pRakNetInstance->send(new InteractPacket(player->m_EntityID, pTarget->m_EntityID, InteractPacket::INTERACT));
-				pGameMode->interact(player, pTarget);
+				InteractPacket pkt(player->m_EntityID, pTarget->m_EntityID, InteractPacket::INTERACT);
+				m_pRakNetInstance->send(pkt);
+
+				pGameMode->interact(*player, *pTarget);
 				m_lastInteractTime = getTimeMs();
 			}
 			break;
 		}
 		case HitResult::TILE:
 		{
-			Tile* pTile = Tile::tiles[m_pLevel->getTile(m_hitResult.m_tilePos)];
+			TileSource& source = player->getTileSource();
+
+			Tile* pTile = Tile::tiles[source.getTile(m_hitResult.m_tilePos)];
 
 			if (action.isDestroy())
 			{
@@ -488,14 +515,14 @@ void Minecraft::handleBuildAction(const BuildActionIntention& action)
 					bool destroyed = false;
 					if (action.isDestroyStart())
 					{
-						destroyed = pGameMode->startDestroyBlock(player, m_hitResult.m_tilePos, m_hitResult.m_hitSide);
+						destroyed = pGameMode->startDestroyBlock(*player, m_hitResult.m_tilePos, m_hitResult.m_hitSide);
 						player->startDestroying();
 					}
 
-					bool contDestory = pGameMode->continueDestroyBlock(player, m_hitResult.m_tilePos, m_hitResult.m_hitSide);
+					bool contDestory = pGameMode->continueDestroyBlock(*player, m_hitResult.m_tilePos, m_hitResult.m_hitSide);
 
 					destroyed = destroyed || contDestory;
-					m_pParticleEngine->crack(m_hitResult.m_tilePos, m_hitResult.m_hitSide);
+					m_pParticleEngine->crack(*player, m_hitResult.m_tilePos, m_hitResult.m_hitSide);
 
 					m_lastBlockBreakTime = getTimeMs();
 
@@ -509,13 +536,13 @@ void Minecraft::handleBuildAction(const BuildActionIntention& action)
 			else if (action.isPick())
 			{
 				// Try to pick the tile.
-				int auxValue = m_pLevel->getData(m_hitResult.m_tilePos);
+				TileData auxValue = source.getData(m_hitResult.m_tilePos);
 				player->m_pInventory->pickItem(pTile->m_ID, auxValue, C_MAX_HOTBAR_ITEMS);
 			}
 			else if (action.isPlace() && canInteract)
 			{
 				ItemStack& item = getSelectedItem();
-				if (pGameMode->useItemOn(player, m_pLevel, item, m_hitResult.m_tilePos, m_hitResult.m_hitSide))
+				if (pGameMode->useItemOn(*player, item, m_hitResult.m_tilePos, m_hitResult.m_hitSide))
 				{
 					bInteract = false;
 
@@ -536,7 +563,7 @@ void Minecraft::handleBuildAction(const BuildActionIntention& action)
 		if (!item.isEmpty())
 		{
 			m_lastInteractTime = getTimeMs();
-			if (pGameMode->useItem(player, m_pLevel, item))
+			if (pGameMode->useItem(*player, item))
 				m_pGameRenderer->m_pItemInHandRenderer->itemUsed();
 		}
 	}
@@ -544,6 +571,12 @@ void Minecraft::handleBuildAction(const BuildActionIntention& action)
 
 void Minecraft::tickInput()
 {
+	if (!platform()->hasGamepad() && useController())
+		resetInputMethod();
+
+	if (!m_pInputHolder->allowsInputMethod(GetInputMethod()))
+		reloadInput();
+
 	if (m_pScreen)
 	{
 		if (!m_pScreen->m_bPassEvents)
@@ -562,7 +595,7 @@ void Minecraft::tickInput()
 		}
 	}
 
-	if (!m_pLocalPlayer)
+	if (!m_pLocalPlayer || m_bPreparingLevel)
 		return;
 
 	//bool bIsInGUI = m_pGui->isInside(Mouse::getX(), Mouse::getY());
@@ -576,8 +609,12 @@ void Minecraft::tickInput()
 		{
 			// @HACK: on SDL1, we don't recenter the mouse every tick, meaning the user can
 			// unintentionally click the hotbar while swinging their fist
-			if (AppPlatform::singleton()->getRecenterMouseEveryTick() || m_pScreen)
+			if (platform()->getRecenterMouseEveryTick() || m_pScreen)
+			{
 				m_pGui->handleClick(1, Mouse::getX(), Mouse::getY());
+				// Gui:handleClick() pops the current mouse event from the stack, and continuing would mean an over-read
+				continue;
+			}
 		}
 
 		MouseButtonType buttonType = Mouse::getEventButton();
@@ -589,83 +626,115 @@ void Minecraft::tickInput()
 #endif
 	}
 
-	while (Keyboard::next())
+	if (useController())
 	{
-		int keyCode = Keyboard::getEventKey();
-		bool bPressed = Keyboard::getEventKeyState() == 1;
+		//Clearing, so the events don't accumulate
+		Keyboard::reset();
 
-		m_pLocalPlayer->m_pMoveInput->setKey(keyCode, bPressed);
-
-		if (bPressed)
+		while (GameControllerManager::next())
 		{
-			m_pGui->handleKeyPressed(keyCode);
+			GameController::EngineButtonID button = GameControllerManager::getEventButton();
+			bool bPressed = GameControllerManager::getEventButtonState() == GameController::BTN_STATE_DOWN;
 
-			for (int i = 0; i < m_pGui->getNumUsableSlots(); i++)
-			{
-				if (getOptions()->isKey(eKeyMappingIndex(KM_SLOT_1 + i), keyCode))
-					m_pLocalPlayer->m_pInventory->selectSlot(i);
-			}
+			if (bPressed)
+				m_pGui->handleUserAction(ActionInfo(-1, button));
 
-			if (getOptions()->isKey(KM_TOGGLE3RD, keyCode))
+			for (size_t i = 0; i < AID_COUNT; ++i)
 			{
-				getOptions()->m_thirdPerson.toggle();
-			}
-			else if (getOptions()->isKey(KM_MENU_PAUSE, keyCode))
-			{
-				handleBack(false);
-			}
-			else if (getOptions()->isKey(KM_DROP, keyCode))
-			{
-				ItemStack& item = m_pLocalPlayer->m_pInventory->getSelected();
-				if (!item.isEmpty())
-				{
-					ItemStack itemDrop(item);
-					itemDrop.m_count = 1;
+				UserActionID ctrl = (UserActionID)i;
+				if (!getOptions()->getAction(ctrl).isControllerButton(button)) continue;
 
-					if (m_pLocalPlayer->isSurvival())
-						item.shrink(1);
-
-					m_pLocalPlayer->drop(itemDrop);
-				}
-			}
-			else if (getOptions()->isKey(KM_TOGGLEGUI, keyCode))
-			{
-				getOptions()->m_hideGui.toggle();
-			}
-			else if (getOptions()->isKey(KM_TOGGLEDEBUG, keyCode))
-			{
-				getOptions()->m_debugText.toggle();
-			}
-#ifdef ENH_ALLOW_AO_TOGGLE
-			else if (getOptions()->isKey(KM_TOGGLEAO, keyCode))
-			{
-				// Toggle ambient occlusion.
-				getOptions()->m_ambientOcclusion.toggle();
-				Minecraft::useAmbientOcclusion = getOptions()->m_ambientOcclusion.get();
-				m_pLevelRenderer->allChanged();
-			}
-#endif
-		}
-
-		if (getOptions()->m_bUseMouseForDigging)
-			continue;
-
-		// @TODO: Replace with KeyboardBuildInput
-		if (!useController() && getTimeMs() - field_2B4 <= 200)
-		{
-			if (getOptions()->getKey(KM_DESTROY) == keyCode && bPressed)
-			{
-				BuildActionIntention intention(BuildActionIntention::KEY_DESTROY);
-				handleBuildAction(intention);
-			}
-
-			if (getOptions()->getKey(KM_PLACE) == keyCode && bPressed)
-			{
-				BuildActionIntention intention(BuildActionIntention::KEY_USE);
-				handleBuildAction(intention);
+				m_pLocalPlayer->m_pMoveInput->setKey(ctrl, bPressed);
+				if (bPressed)
+					getOptions()->getInputMapping(ctrl).pressed();
+				else
+					getOptions()->getInputMapping(ctrl).reset();
 			}
 		}
 	}
+	else
+	{
+		// Clearing, so the events don't accumulate
+		GameControllerManager::clear();
+		while (Keyboard::next())
+		{
+			int keyCode = Keyboard::getEventKey();
+			bool bPressed = Keyboard::getEventKeyState() == Keyboard::DOWN;
+
+			if (bPressed)
+				m_pGui->handleUserAction(ActionInfo(keyCode, GameController::BUTTON_NONE));
+
+			for (size_t i = 0; i < AID_COUNT; ++i)
+			{
+				UserActionID ctrl = (UserActionID)i;
+				if (!getOptions()->isKey(ctrl, keyCode)) continue;
+
+				m_pLocalPlayer->m_pMoveInput->setKey(ctrl, bPressed);
+				if (bPressed)
+					getOptions()->getInputMapping(ctrl).pressed();
+				else
+					getOptions()->getInputMapping(ctrl).reset();
+			}
+
+			if (getOptions()->m_bUseMouseForDigging)
+				continue;
+
+			// @TODO: Replace with KeyboardBuildInput
+			if (getTimeMs() - field_2B4 <= 200)
+			{
+				if (getOptions()->isKey(AID_DESTROY, keyCode) && bPressed)
+				{
+					BuildActionIntention intention(BuildActionIntention::KEY_DESTROY);
+					handleBuildAction(intention);
+				}
+
+				if (getOptions()->isKey(AID_PLACE, keyCode) && bPressed)
+				{
+					BuildActionIntention intention(BuildActionIntention::KEY_USE);
+					handleBuildAction(intention);
+				}
+			}
+		}
+	}
+
+	for (int i = 0; i < m_pGui->getNumUsableSlots(); i++)
+	{
+		while (getOptions()->getInputMapping(UserActionID(AID_SLOT_1 + i)).consume())
+			m_pLocalPlayer->m_pInventory->selectSlot(i);
+	}
+
+	while (getOptions()->getInputMapping(AID_TOGGLE3RD).consume())
+	{
+		getOptions()->m_thirdPerson.toggle();
+	}
+
+	while (getOptions()->getInputMapping(AID_MENU_PAUSE).consume())
+	{
+		handleBack(false);
+	}
+
+	while (getOptions()->getInputMapping(AID_DROP).consume())
+	{
+		m_pLocalPlayer->drop();
+	}
+
+	while (getOptions()->getInputMapping(AID_TOGGLEGUI).consume())
+	{
+		getOptions()->m_hideGui.toggle();
+	}
+
+	while (getOptions()->getInputMapping(AID_TOGGLEDEBUG).consume())
+	{
+		getOptions()->m_debugText.toggle();
+	}
+#ifdef ENH_ALLOW_AO_TOGGLE
+	while (getOptions()->getInputMapping(AID_TOGGLEAO).consume())
+	{
+		// Toggle ambient occlusion.
+		getOptions()->m_ambientOcclusion.toggle();
+		m_pLevelRenderer->allChanged();
+	}
+#endif
 
 	BuildActionIntention bai;
 	IBuildInput* buildInput = m_pInputHolder->getBuildInput();
@@ -673,9 +742,6 @@ void Minecraft::tickInput()
 		handleBuildAction(bai);
 
 	field_2B4 = getTimeMs();
-
-	Keyboard::reset();
-	Mouse::reset();
 }
 
 void Minecraft::tickMouse()
@@ -694,7 +760,7 @@ void Minecraft::tickMouse()
 	 * This is exactly what Minecraft Java does too
 	**/
 
-	if (useController() || isTouchscreen())
+	if (useController() || useTouchscreen())
 		return; // don't actually try to recenter the mouse
 
     if (AppPlatform::singleton()->getRecenterMouseEveryTick()) // just for SDL1
@@ -759,9 +825,14 @@ void Minecraft::sendMessage(const std::string& message)
 	{
 		// send the server a message packet
 		if (m_pRakNetInstance)
-			m_pRakNetInstance->send(new MessagePacket(message));
+		{
+			MessagePacket pkt(message);
+			m_pRakNetInstance->send(pkt);
+		}
 		else
+		{
 			m_pGui->addMessage("You aren't actually playing multiplayer!");
+		}
 	}
 	else
 	{
@@ -804,7 +875,7 @@ void Minecraft::freeResources(bool bCopyMap)
 
 #ifdef ENH_IMPROVED_SAVING
 	m_bIsGamePaused = true;
-	setScreen(new SavingWorldScreen(bCopyMap/*, m_pLocalPlayer*/));
+	getScreenChooser()->pushSavingScreen(bCopyMap/*, m_pLocalPlayer*/);
 #else
 	if (m_pLevel)
 	{
@@ -819,6 +890,48 @@ void Minecraft::freeResources(bool bCopyMap)
 	field_D9C = 0;
 }
 
+void Minecraft::unloadLevel(bool bCopyMap)
+{
+	if (m_pLevel)
+	{
+		if (!m_pLevel->m_bIsClientSide || bCopyMap)
+		{
+			m_progressPercent = 33;
+			m_pLevel->saveUnsavedChunks();
+
+			m_progressPercent = 66;
+			m_pLevel->saveLevelData();
+
+			m_progressPercent = 100;
+			m_pLevel->savePlayerData();
+		}
+
+		LevelStorage* pStorage = m_pLevel->getLevelStorage();
+		SAFE_DELETE(pStorage);
+		SAFE_DELETE(m_pLevel);
+
+		m_pLevel = nullptr;
+	}
+
+	// this is safe to do, since on destruction, nothing accesses the parent level or anything
+	//SAFE_DELETE(m_pEntityToDeleteAfterSave);
+	// already done by the Level
+
+	m_pCameraEntity = m_pLocalPlayer = nullptr;
+
+
+	m_bUsingScreen = true;
+
+	if (bCopyMap)
+		setScreen(new RenameMPLevelScreen("_LastJoinedServer"));
+	else
+		gotoMainMenu();
+
+	m_bUsingScreen = false;
+
+	m_bIsGamePaused = false;
+}
+
 std::string Minecraft::getVersionString(const std::string& str) const
 {
 	return "v0.3.3" + str + " alpha";
@@ -826,12 +939,22 @@ std::string Minecraft::getVersionString(const std::string& str) const
 
 void Minecraft::tick()
 {
+	if (m_bPendingResize)
+	{
+		m_bPendingResize = false;
+		sizeUpdate(width, height);
+	}
+
 	if (!m_pScreen)
 	{
 		if (m_pLocalPlayer && m_pLocalPlayer->m_health <= 0)
 		{
-			setScreen(new DeathScreen);
+			getScreenChooser()->pushDeathScreen();
 		}
+	}
+	else
+	{
+		m_pScreen->validate(this);
 	}
 
 	tickInput();
@@ -871,7 +994,7 @@ void Minecraft::tick()
 
 			if (m_pLocalPlayer)
 			{
-				m_pLevel->animateTick(m_pLocalPlayer->m_pos);
+				m_pLevel->animateTick(m_pLocalPlayer->getPos());
 			}
 		}
 
@@ -889,6 +1012,9 @@ void Minecraft::tick()
 			m_pScreen->tick();
 
 		Multitouch::reset();
+
+		// Actually pause the game, because fuck bedrock edition
+		m_bIsGamePaused = (!isOnline() || (m_pLevel && m_pLevel->m_players.size() == 1)) && (m_pScreen && m_pScreen->isPauseScreen());
 	}
 }
 
@@ -910,25 +1036,27 @@ void Minecraft::update()
 		field_DA8++;
 	}
 
+	m_pSoundEngine->update();
+
 	if (m_pLevel && !m_bPreparingLevel)
 	{
 		m_pLevel->updateLights();
 	}
 
-#ifndef ORIGINAL_CODE
 	tickMouse();
-	m_pSoundEngine->update();
-#endif
 
 	mce::RenderContext& renderContext = mce::RenderContextImmediate::get();
 
 	renderContext.beginRender();
 
-	m_pGameRenderer->render(m_timer);
+	if (!m_bPreparingLevel)
+	{
+		GameMode* pGameMode = getLocalPlayerGameMode();
+		if (pGameMode)
+			pGameMode->render(m_timer.m_renderTicks);
+	}
 
-	GameMode* pGameMode = getLocalPlayerGameMode();
-	if (pGameMode)
-		pGameMode->render(m_timer.m_renderTicks);
+	m_pGameRenderer->render(m_timer);
 
 	renderContext.endRender();
 
@@ -946,12 +1074,12 @@ void Minecraft::prepareLevel(const std::string& unused)
 {
 	field_DA0 = 1;
 
-	float startTime = float(getTimeS());
+	//float startTime = float(getTimeS());
 	Level* pLevel = m_pLevel;
 
 	if (!pLevel->field_B0C)
 	{
-		pLevel->setUpdateLights(0);
+		pLevel->setUpdateLights(false);
 	}
 
 	for (int i = 8, i2 = 0; i != 8 + C_MAX_CHUNKS_X * 16; i += 16)
@@ -961,31 +1089,31 @@ void Minecraft::prepareLevel(const std::string& unused)
 			// this looks like some kind of progress tracking
 			m_progressPercent = i2 / (C_MAX_CHUNKS_X * C_MAX_CHUNKS_Z);
 
-			float time1 = float(getTimeS());
+			//float time1 = float(getTimeS());
 
 			// generating all the chunks at once
 			(void)pLevel->getTile(TilePos(i, (C_MAX_Y + C_MIN_Y) / 2, j));
 
-			if (time1 != -1.0f)
-				getTimeS();
+			//if (time1 != -1.0f)
+			//	getTimeS();
 
-			float time2 = getTimeS();
+			//float time2 = getTimeS();
 			if (pLevel->field_B0C)
 			{
 				while (pLevel->updateLights());
 			}
 
-			if (time2 != -1.0f)
-				getTimeS();
+			//if (time2 != -1.0f)
+			//	getTimeS();
 		}
 	}
 
-	if (startTime != -1.0f)
-		getTimeS();
+	//if (startTime != -1.0f)
+	//	getTimeS();
 
-	pLevel->setUpdateLights(1);
+	pLevel->setUpdateLights(true);
 
-	startTime = float(getTimeS());
+	//startTime = float(getTimeS());
 
 	ChunkPos cp(0, 0);
 	for (cp.x = 0; cp.x < C_MAX_CHUNKS_X; cp.x++)
@@ -1004,8 +1132,8 @@ void Minecraft::prepareLevel(const std::string& unused)
 		}
 	}
 
-	if (startTime != -1.0f)
-		getTimeS();
+	//if (startTime != -1.0f)
+	//	getTimeS();
 
 	field_DA0 = 3;
 
@@ -1013,7 +1141,7 @@ void Minecraft::prepareLevel(const std::string& unused)
 	{
 		pLevel->setInitialSpawn();
 		pLevel->saveLevelData();
-		pLevel->getChunkSource()->saveAll();
+		pLevel->getChunkSource().saveAll();
 		pLevel->saveGame();
 	}
 	else
@@ -1025,12 +1153,12 @@ void Minecraft::prepareLevel(const std::string& unused)
 	m_progressPercent = -1;
 	field_DA0 = 2;
 
-	startTime = float(getTimeS());
+	//startTime = float(getTimeS());
 
 	pLevel->prepare();
 
-	if (startTime != -1.0f)
-		getTimeS();
+	//if (startTime != -1.0f)
+	//	getTimeS();
 
 	// These strings are initialized and then removed quickly afterwards. Probably some debug leftover
 	// "Generate level:";
@@ -1042,22 +1170,34 @@ void Minecraft::prepareLevel(const std::string& unused)
 
 void Minecraft::sizeUpdate(int newWidth, int newHeight)
 {
+	float baseScale = getBestScaleForThisScreenSize(newWidth, newHeight);
+	
 	// re-calculate the GUI scale.
-	Gui::GuiScale =  getBestScaleForThisScreenSize(newWidth, newHeight) / getRenderScaleMultiplier();
+	Gui::GuiScale = baseScale / GetRenderScaleMultiplier();
 
 	// The ceil gives an extra pixel to the screen's width and height, in case the GUI scale doesn't
 	// divide evenly into width or height, so that none of the game screen is uncovered.
-	Gui::GuiHeight = ceilf(Minecraft::height * Gui::GuiScale);
-	Gui::GuiScale = float(Gui::GuiHeight) / height;
-	Gui::GuiWidth = ceilf(Minecraft::width * Gui::GuiScale);
+	float newGuiWidth = ceilf(Minecraft::width * Gui::GuiScale);
+	float newGuiHeight = ceilf(Minecraft::height * Gui::GuiScale);
+	
+	// GuiSize did not change, bail out
+	if (newGuiWidth == Gui::GuiWidth && newGuiHeight == Gui::GuiHeight)
+		return;
+	
+	Gui::GuiWidth  = newGuiWidth;
+	Gui::GuiHeight = newGuiHeight;
 
 	if (m_pScreen)
+	{
 		m_pScreen->setSize(
 			Gui::GuiWidth,
 			Gui::GuiHeight
 		);
+		m_pScreen->initMenuPointer();
+	}
 
 	LogoRenderer::singleton().build(Gui::GuiWidth);
+	
 
 	if (m_pInputHolder)
 		m_pInputHolder->setScreenSize(Minecraft::width, Minecraft::height);
@@ -1084,21 +1224,20 @@ float Minecraft::getBestScaleForThisScreenSize(int width, int height)
 #define USE_JAVA_SCREEN_SCALING
 #endif
 #ifdef USE_JAVA_SCREEN_SCALING
-	// @HACK: the scaling code for Java/Pocket Screens when using the Console theme is pretty broken
-	if (m_pOptions->getUiTheme() != UI_CONSOLE)
+	if (getUiTheme() == UI_JAVA)
 	{
 		int scale;
 		for (scale = 1; width / (scale + 1) >= 320 && height / (scale + 1) >= 240; ++scale)
 		{
 		}
-		return scale;
+		return 1.0f / scale;
 	}
 #endif
 
 	if (height > 1800)
 		return 1.0f / 8.0f;
 
-	if (isTouchscreen())
+	if (useTouchscreen())
 	{
 		if (height > 1100)
 			return 1.0f / 6.0f;
@@ -1117,7 +1256,7 @@ float Minecraft::getBestScaleForThisScreenSize(int width, int height)
 	}
 	else
 	{
-		// @PARITY: This is the screen scaling we use on non-touchscreen devices (minus Xboxes)
+		// @PARITY-JAVA: This is the screen scaling we use on non-touchscreen devices (minus Xboxes)
 		if (height > 1600)
 			return 1.0f / 4.0f;
 
@@ -1145,17 +1284,17 @@ void Minecraft::onClientStartedLevel(Level* pLevel, LocalPlayer* pLocalPlayer)
 {
 	// already added in Level::loadPlayer()
 	//pLevel->addEntity(pLocalPlayer); // addPlayer on 0.12.1
-	setupLevelRendering(pLevel, pLocalPlayer->getDimension(), pLocalPlayer);
+	setupLevelRendering(pLevel, &pLocalPlayer->getDimension(), pLocalPlayer);
 }
 
-void Minecraft::generateLevel(const std::string& unused, Level* pLevel)
+void Minecraft::generateLevel(const std::string& unused, Level& level)
 {
-	float time = float(getTimeS()); //@UNUSED
+	//float time = float(getTimeS()); //@UNUSED
 
 	prepareLevel(unused);
 
-	if (time != -1.0f)
-		getTimeS(); //@QUIRK: unused return value
+	//if (time != -1.0f)
+	//	getTimeS(); //@QUIRK: unused return value
 
 	// std::string("Level generated: "); //@QUIRK: unused string instance
 
@@ -1164,9 +1303,9 @@ void Minecraft::generateLevel(const std::string& unused, Level* pLevel)
 	LocalPlayer* pLocalPlayer = m_pLocalPlayer;
 	if (!pLocalPlayer)
 	{
-		pLocalPlayer = pGameMode->createPlayer(pLevel);
+		pLocalPlayer = pGameMode->createPlayer(level);
 		pLocalPlayer->resetPos();
-		pGameMode->initPlayer(pLocalPlayer);
+		pGameMode->initPlayer(*pLocalPlayer);
 	}
 
 	if (pLocalPlayer)
@@ -1174,8 +1313,8 @@ void Minecraft::generateLevel(const std::string& unused, Level* pLevel)
 
 	pGameMode->adjustPlayer(pLocalPlayer);
 
-	pLevel->validateSpawn();
-	pLevel->loadPlayer(*pLocalPlayer);
+	level.validateSpawn();
+	level.loadPlayer(*pLocalPlayer);
 
 	m_pLocalPlayer = pLocalPlayer;
 
@@ -1189,7 +1328,7 @@ void* Minecraft::prepareLevel_tspawn(void* ptr)
 {
 	Minecraft* pMinecraft = (Minecraft*)ptr;
 
-	pMinecraft->generateLevel("Currently not used", pMinecraft->m_pLevel);
+	pMinecraft->generateLevel("Currently not used", *pMinecraft->m_pLevel);
 
 	return nullptr;
 }
@@ -1198,11 +1337,6 @@ bool Minecraft::pauseGame()
 {
 	if (isGamePaused() || m_pScreen) return false;
 
-	if (!isOnline() || m_pLevel->m_players.size() == 1)
-	{
-		// Actually pause the game, because fuck bedrock edition
-		m_bIsGamePaused = true;
-	}
 	m_pLevel->savePlayerData();
 	getScreenChooser()->pushPauseScreen();
 

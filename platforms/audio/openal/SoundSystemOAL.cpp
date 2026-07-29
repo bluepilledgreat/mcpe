@@ -230,17 +230,17 @@ void SoundSystemOAL::setListenerPos(const Vec3& pos)
 	AL_ERROR_CHECK();
 }
 
-void SoundSystemOAL::setListenerAngle(const Vec2& rot)
+void SoundSystemOAL::setListenerAngle(const Rot2& rot)
 {
-	if (m_listenerYaw == rot.x)
+	if (m_listenerYaw == rot.yaw)
 		return; // No need to waste time doing math and talking to OpenAL
 
 	// Update Listener Orientation
-	float radian_yaw = rot.x * MTH_DEG_TO_RAD;
+	float radian_yaw = rot.yaw * MTH_DEG_TO_RAD;
 	Vec3 orientation[] = { Vec3(-Mth::sin(radian_yaw), 0.0f, Mth::cos(radian_yaw)), Vec3::UNIT_Y };
 	alListenerfv(AL_ORIENTATION, (const ALfloat*)orientation);
 	AL_ERROR_CHECK();
-	m_listenerYaw = rot.x;
+	m_listenerYaw = rot.yaw;
 }
 
 void SoundSystemOAL::setMusicVolume(float vol)
@@ -294,7 +294,7 @@ void SoundSystemOAL::playAt(const SoundDesc& sound, const Vec3& pos, float volum
 	// Only set constant parameters if source isn't reused
 	if (isNew)
 	{
-		// Not set by Paulscode
+		// Not set by Paulscode, we handle it in-engine
 		/*alSourcef(al_source, AL_MAX_DISTANCE, SOUND_MAX_DISTANCE);
 		AL_ERROR_CHECK();*/
 
@@ -410,7 +410,7 @@ void SoundSystemOAL::startEngine()
 	{
 		m_musicStream = new SoundStreamOAL();
 	}
-	catch (const std::runtime_error& e)
+	catch (const std::runtime_error&)
 	{
 		LOG_E("Failed to init audio");
 		return;

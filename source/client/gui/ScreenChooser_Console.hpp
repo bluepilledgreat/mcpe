@@ -13,6 +13,11 @@ public:
     void pushPauseScreen() override;
     void pushOptionsScreen(Screen*) override;
     void pushProgressScreen() override;
+    void pushPlayerCraftingScreen(Player*) override;
+    void pushCreativeScreen(Player*) override;
     void pushCreateWorldScreen(Screen*) override;
     void pushCraftingScreen(Player*, const TilePos&) override;
+    void pushTrapScreen(Player*, DispenserTileEntity*) override;
+    void pushDeathScreen() override;
+    void pushSavingScreen(bool) override;
 };

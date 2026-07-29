@@ -1,6 +1,6 @@
 #include "world/entity/Creeper.hpp"
 
-Creeper::Creeper(Level* pLevel) : Monster(pLevel)
+Creeper::Creeper(TileSource& source) : Monster(source)
 {
 	m_pDescriptor = &EntityTypeDescriptor::creeper;
 	m_renderType = RENDER_CREEPER;
@@ -76,7 +76,8 @@ void Creeper::checkHurtTarget(Entity* pEnt, float f)
 	{
 		setSwellDir(-1);
 		m_swell--;
-		if (m_swell < 0) {
+		if (m_swell < 0)
+		{
 			m_swell = 0;
 		}
 	}

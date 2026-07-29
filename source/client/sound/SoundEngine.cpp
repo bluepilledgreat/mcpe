@@ -18,7 +18,7 @@ SoundEngine::SoundEngine(SoundSystem* soundSystem, float maxDistance)
     m_pOptions = nullptr;
     field_40 = 0;
     m_listenerPosition = Vec3::ZERO;
-    m_listenerOrientation = Vec2::ZERO;
+    m_listenerOrientation = Rot2::ZERO;
     m_soundDistance = maxDistance; // PE: 1.0f / maxDistance
     m_noMusicDelay = m_random.nextInt(12000);
     field_A20 = 0;
@@ -143,12 +143,12 @@ void SoundEngine::updateListener(const Mob* player, float elapsedTime)
     {
         if (player != nullptr)
         {
-            Vec3 pos = player->getPos(elapsedTime);
+            Vec3 pos = player->getInterpolatedPosition(elapsedTime);
             pos.y -= player->m_heightOffset;
             m_listenerPosition = pos;
             m_pSoundSystem->setListenerPos(pos);
 
-            Vec2 rot = player->getRot(elapsedTime);
+            Rot2 rot = player->getInterpolatedRotation(elapsedTime);
             m_listenerOrientation = rot;
             m_pSoundSystem->setListenerAngle(rot);
         }

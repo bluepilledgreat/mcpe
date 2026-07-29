@@ -10,9 +10,11 @@
 #include "world/item/Item.hpp"
 #include "world/entity/MobCategory.hpp"
 #include "world/entity/MobFactory.hpp"
+#include "world/tile/entity/TileEntityType.hpp"
 #include "client/player/input/GameControllerHandler.hpp"
 #include "client/player/input/Multitouch.hpp"
 #include "client/gui/screens/StartMenuScreen.hpp"
+#include "client/gui/screens/AutosaveWarningScreen_Console.hpp"
 #include "client/renderer/FoliageColor.hpp"
 #include "client/renderer/GrassColor.hpp"
 #include "client/renderer/Lighting.hpp"
@@ -85,6 +87,9 @@ void NinecraftApp::_initTextures()
 
 	_reloadTextures();
 
+	m_pTextures->addDynamicTexture(new CompassTexture(this));
+	m_pTextures->addDynamicTexture(new ClockTexture(this));
+
 	if (GrassColor::isAvailable()) GrassColor::init();
 	if (FoliageColor::isAvailable()) FoliageColor::init();
 
@@ -101,10 +106,12 @@ void NinecraftApp::_initRenderMaterials()
 
 void NinecraftApp::_initInput()
 {
-	m_bIsTouchscreen = AppPlatform::singleton()->isTouchscreen();
-	getOptions()->m_bUseController.set(AppPlatform::singleton()->hasGamepad());
+	m_bIsTouchscreen = platform()->isTouchscreen();
+
+	resetInputMethod();
+
 	getOptions()->loadControls();
-	_reloadInput();
+	reloadInput();
 }
 
 void NinecraftApp::_updateStats()
@@ -179,10 +186,10 @@ void NinecraftApp::_initAll()
 		EntityTypeDescriptor::initDescriptors(); // custom
 		MobCategory::initMobCategories();
 		MobFactory::initMobLists();
+		TileEntityFactory::initTileEntities();
 		Tile::initTiles();
 		Item::initItems();
 		Biome::initBiomes();
-		//TileEntity::initTileEntities();
 	}
 
 	_initOptions();
@@ -217,7 +224,16 @@ void NinecraftApp::_initAll()
 
 	field_D9C = 0;
 
-	gotoMainMenu();
+	if (getOptions()->getUiTheme() == UI_CONSOLE)
+	{
+		setScreen(new AutosaveWarningScreen_Console(m_pScreen));
+	}
+	else
+	{
+		gotoMainMenu();
+	}
+
+	LogoRenderer::singleton().build(Gui::GuiWidth);
 }
 
 bool NinecraftApp::handleBack(bool b)
@@ -271,6 +287,7 @@ void NinecraftApp::onAppResumed()
 	Tesselator::instance.init();
     
 	m_pTextures->clear();
+	m_pTextures->setupAtlases(true);
 	_reloadTextures();
 	m_pFont->onGraphicsReset();
     
@@ -340,6 +357,7 @@ void NinecraftApp::onGraphicsReset()
 
 void NinecraftApp::teardown()
 {
+	TileEntityFactory::teardownTileEntities();
 	teardownRenderer();
 	Resource::teardownLoaders();
 	// Stop our SoundSystem before we nuke our sound buffers and cause it to implode
@@ -365,13 +383,10 @@ void NinecraftApp::update()
 
 	Multitouch::commit();
 
-	if (getOptions()->m_bUseController.get())
+	GameControllerHandler* pControllerHandler = platform()->getGameControllerHandler();
+	if (pControllerHandler)
 	{
-		GameControllerHandler* pControllerHandler = AppPlatform::singleton()->getGameControllerHandler();
-		if (pControllerHandler)
-		{
-			pControllerHandler->refresh();
-		}
+    pControllerHandler->refresh();
 	}
 
 	Minecraft::update();

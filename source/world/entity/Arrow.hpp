@@ -11,9 +11,9 @@ private:
 	void _init();
 
 public:
-	Arrow(Level* pLevel);
-	Arrow(Level* pLevel, const Vec3& pos);
-	Arrow(Level* pLevel, Mob* pMob);
+	Arrow(TileSource& source);
+	Arrow(TileSource& source, const Vec3& pos, bool isPlayerOwned = false);
+	Arrow(Mob& mob);
 
 private:
 	void _lerpMotion(const Vec3& vel);
@@ -21,7 +21,7 @@ private:
 
 public:
 	void shoot(float x, float y, float z, float speed, float r) { shoot(Vec3(x, y, z), speed, r); };
-	void shoot(Vec3 pos, float speed, float r);
+	void shoot(Vec3, float speed, float r);
 	
 	void lerpMotion(float x, float y, float z) { lerpMotion(Vec3(x, y, z)); };
 	void lerpMotion(const Vec3& vel) override;

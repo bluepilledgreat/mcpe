@@ -1,12 +1,15 @@
 #include "TallGrass.hpp"
-#include "world/level/Level.hpp"
+#include "world/level/TileSource.hpp"
+#include "world/level/levelgen/biome/BiomeSource.hpp"
 #include "client/renderer/PatchManager.hpp"
-#include <client/renderer/GrassColor.hpp>
-#include <client/renderer/FoliageColor.hpp>
+#include "client/renderer/FoliageColor.hpp"
+#include "client/renderer/GrassColor.hpp"
 
 TallGrass::TallGrass(TileID id, int texture) : Bush(id, texture)
 {
 	setShape(0.1f, 0.0f, 0.1f, 0.9f, 0.8f, 0.9f);
+
+	m_bBiomeColors = false;
 }
 
 bool TallGrass::isValidGrowTile(const TileID tile) const
@@ -19,19 +22,31 @@ int TallGrass::getResource(TileData data, Random* random) const
 	return random->nextInt(8) == 0 ? Item::seeds->m_itemID : 0;
 }
 
-int TallGrass::getColor(const LevelSource* levelSource, const TilePos& pos) const
+int TallGrass::getColor(TileSource& source, const TilePos& pos) const
 {
+	if (GrassColor::isAvailable() && m_bBiomeColors)
+	{
+		BiomeSource& biomeSource = *source.getBiomeSource();
+		biomeSource.getBiomeBlock(pos, 1, 1);
+		return GrassColor::get(biomeSource.field_4[0], biomeSource.field_8[0]);
+	}
+
 	if (GetPatchManager()->IsGrassTinted())
 	{
 		return 0x339933;
 	}
+
 	return 0xFFFFFF;
 }
 
-int TallGrass::getTexture(const LevelSource* level, const TilePos& pos, Facing::Name face) const
+int TallGrass::getColor(Facing::Name face, TileData data) const
 {
-	TileData data = level->getData(pos);
-	return data == 1 ? m_TextureFrame : (data == 2 ? m_TextureFrame + 16 + 1 : (data == 0 ? m_TextureFrame + 16 : m_TextureFrame));
+	return data == 0 ? 0xFFFFFF : FoliageColor::getDefaultColor();
+}
+
+int TallGrass::getTexture(Facing::Name face, TileData data) const
+{
+	return data == 1 ? m_TextureFrame : (data == 2 ? m_TextureFrame + 16 + 1 : (data == 1 ? m_TextureFrame : m_TextureFrame + 16));
 }
 
 eRenderShape TallGrass::getRenderShape() const

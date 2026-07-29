@@ -14,10 +14,14 @@
 #include "world/entity/ItemEntity.hpp"
 #include "world/gamemode/GameType.hpp"
 #include "world/inventory/InventoryMenu.hpp"
+#include "world/entity/FishingHook.hpp"
 
 #define C_PLAYER_FLAG_USING_ITEM (4)
 
 class Inventory; // in case we're included from Inventory.hpp
+class Dimension;
+class FurnaceTileEntity;
+class DispenserTileEntity;
 
 class Player : public Mob
 {
@@ -35,16 +39,17 @@ private:
 	void _init();
 
 public:
-	Player(Level* pLevel, GameType gameType);
+	Player(Level& level, GameType gameType);
 	virtual ~Player();
 
 protected:
 	virtual void reallyDrop(ItemEntity* pEnt);
+	virtual void _handleOpenedContainerMenu();
 
 public:
 	void reset() override;
 	void remove() override;
-	float getHeadHeight() const override { return 0.12f; /*@HUH: what ?*/ }
+	float getHeadHeight() const override { return 0.12f; }
 	int getMaxHealth() const override { return 20; }
 	bool isShootable() const override { return true; }
 	bool isPlayer() const override { return true; }
@@ -66,23 +71,23 @@ public:
 	void causeFallDamage(float level) override;
 
 	virtual void animateRespawn();
-	//virtual void drop(); // see definition
+	virtual void drop();
 	virtual void drop(const ItemStack& item, bool randomly = false);
 	virtual void startCrafting(const TilePos& pos);
 	virtual void startStonecutting(const TilePos& pos);
 	virtual void startDestroying();
 	virtual void stopDestroying();
-	//virtual void openFurnace(FurnaceTileEntity* tileEntity);
-	virtual void openContainer(Container* container) {}
-	virtual void closeContainer() {}
-	//virtual void openTrap(DispenserTileEntity* tileEntity);
+	virtual void openFurnace(FurnaceTileEntity* tileEntity);
+	virtual void openContainer(Container* container);
+	virtual void closeContainer();
+	virtual void openTrap(DispenserTileEntity* tileEntity);
 	//virtual void openTextEdit(SignTileEntity* tileEntity);
 	virtual bool isLocalPlayer() const { return false; }
 	virtual void take(Entity* pEnt, int count) {}
 
 	int addResource(int);
 	void animateRespawn(Player*, Level*);
-	void attack(Entity* pEnt);
+	void attack(Entity& entity);
 	void useItem(ItemStack& item) const;
 	void releaseUsingItem();
 	void stopUsingItem();
@@ -92,15 +97,15 @@ public:
 	int getInventorySlot(int x) const;
 	TilePos getRespawnPosition() const { return m_respawnPos; }
 	int getScore() const { return m_score; }
-	Dimension* getDimension() const;
 	void prepareCustomTextures();
 	void respawn();
-	void rideTick();
+	void rideTick() override;
+	float getRidingHeight() const override { return m_heightOffset - 0.5f; }
 	void setDefaultHeadHeight();
 	void setRespawnPos(const TilePos& pos);
 	inline const Abilities& getAbilities() const { return m_abilities; }
 
-	void touch(Entity* pEnt);
+	void touch(Entity& entity);
 	GameType getPlayerGameType() const { return _playerGameType; }
 	virtual void setPlayerGameType(GameType playerGameType);
 	bool isSurvival() const { return getPlayerGameType() == GAME_TYPE_SURVIVAL; }
@@ -113,7 +118,7 @@ public:
 	// QUIRK: Yes, I did mean it like that, as did Mojang.
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Woverloaded-virtual"
-	void interact(Entity* pEnt);
+	void interact(Entity& entity);
 #pragma GCC diagnostic pop
 
 protected:
@@ -132,11 +137,12 @@ public:
 	float m_bob;
 	int m_dmgSpill;
 	std::string m_name;
-	int m_dimension;
+	DimensionId m_dimension;
 	RakNet::RakNetGUID m_guid;
 	bool m_bFlying;
 	TilePos m_respawnPos;
 	bool m_bHasRespawnPos;
 	bool m_destroyingBlock;
+	FishingHook* m_pFishing;
 };
 

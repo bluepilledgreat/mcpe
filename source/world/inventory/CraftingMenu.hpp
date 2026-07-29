@@ -7,17 +7,16 @@
 class CraftingMenu : public ContainerMenu
 {
 public:
-    CraftingMenu(Inventory* inventory, const TilePos& tilePos, Level* level);
+    CraftingMenu(Inventory* inventory, const TilePos& tilePos, bool is2x2 = false);
     ~CraftingMenu();
 
     void slotsChanged(Container* container) override;
-    void removed(Player* player) override;
-    bool stillValid(Player* player) const override;
-    ItemStack quickMoveStack(int index) override;
+    void removed(Player& player) override;
+    bool stillValid(Player& player) const override;
+    ItemStack quickMoveStack(Container::SlotID slotId) override;
 
 private:
     const TilePos m_pos;
-    Level* m_pLevel;
 
 public:
     CraftingContainer* m_pCraftSlots;

@@ -26,13 +26,16 @@ typedef AppPlatform_sdl1_desktop UsedAppPlatform;
 #endif
 
 // Video Mode Flags
-#if MCE_GFX_API_OGL
-#define VIDEO_FLAGS (SDL_OPENGL | SDL_RESIZABLE)
-#elif MC_PLATFORM_XBOX
-#define VIDEO_FLAGS (0)
-#else
-#define VIDEO_FLAGS (SDL_RESIZABLE)
+const Uint32 VIDEO_FLAGS = 0x0
+#if MC_PLATFORM_PC
+    | SDL_RESIZABLE
 #endif
+#if MCE_GFX_API_OGL
+    | SDL_OPENGL
+#else
+    | SDL_DOUBLEBUF
+#endif
+;
 
 static float g_fPointToPixelScale = 1.0f;
 
@@ -174,6 +177,23 @@ static void handle_events()
                 break;
             }
             case SDL_MOUSEBUTTONDOWN:
+                if (event.button.button == SDL_BUTTON_WHEELUP)
+                {
+                    const float scale = g_fPointToPixelScale;
+                    float x = event.button.x * scale;
+                    float y = event.button.y * scale;
+                    Mouse::feed(MOUSE_BUTTON_SCROLLWHEEL, false, x, y);
+                    break;
+                }
+                else if (event.button.button == SDL_BUTTON_WHEELDOWN)
+                {
+                    const float scale = g_fPointToPixelScale;
+                    float x = event.button.x * scale;
+                    float y = event.button.y * scale;
+                    Mouse::feed(MOUSE_BUTTON_SCROLLWHEEL, true, x, y);
+                    break;
+                }
+                // fall through
             case SDL_MOUSEBUTTONUP:
             {
                 const float scale = g_fPointToPixelScale;
@@ -220,7 +240,7 @@ static void resize()
 
     g_fPointToPixelScale = float(screen->w) / float(screen->w);
 
-    Minecraft::setRenderScaleMultiplier(g_fPointToPixelScale);
+    Minecraft::SetRenderScaleMultiplier(g_fPointToPixelScale);
 
     if (g_pApp)
         g_pApp->sizeUpdate(screen->w, screen->h);

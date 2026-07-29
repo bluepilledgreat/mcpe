@@ -128,15 +128,15 @@ void SoundSystemDS::setListenerPos(const Vec3& pos)
 }
 
 
-void SoundSystemDS::setListenerAngle(const Vec2& rot)
+void SoundSystemDS::setListenerAngle(const Rot2& rot)
 {
 	if (!isAvailable())
 	{
 		return;
 	}
 
-	float yaw = rot.x * M_PI / 180.f;
-	float pitch = rot.y * M_PI / 180.f;
+	float yaw = rot.yaw * M_PI / 180.f;
+	float pitch = rot.pitch * M_PI / 180.f;
 
 	float lx = cosf(pitch) * sinf(yaw);
 	float ly = -sinf(pitch);
@@ -273,9 +273,6 @@ void SoundSystemDS::playAt(const SoundDesc& sound, const Vec3& pos, float volume
 		}
 
 		object3d->SetPosition(pos.x, pos.y, -pos.z, DS3D_IMMEDIATE);
-		// To avoid unnecessary processing on software buffers under VXD drivers, applications should set a reasonable maximum distance...
-		// Even though the engine should never pass out-of-range sounds to the SoundSystem, we do this regardless to prevent misuse
-		object3d->SetMaxDistance(SOUND_MAX_DISTANCE, DS3D_IMMEDIATE);
 
 		info.object3d = object3d;
 	}

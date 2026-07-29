@@ -66,16 +66,11 @@ static void initGraphics()
 		exit(EXIT_FAILURE);
 	}
 
-    // Enable V-Sync
-    // Not setting this explicitly results in undefined behavior
-    if (SDL_GL_SetSwapInterval(-1) == -1) // Try adaptive
+    // Vsync is controlled through the AppPlatform,
+    // default to no vsync here, let platform set it when needed
+    if (SDL_GL_SetSwapInterval(0) == -1)
     {
-        LOG_W("Adaptive V-Sync is not supported on this platform. Falling back to standard V-Sync...");
-        // fallback to standard
-		if (SDL_GL_SetSwapInterval(1) == -1)
-		{
-			LOG_W("Setting the swap interval for V-Sync is not supported on this platform!");
-		}
+        LOG_W("Setting the swap interval is not supported on this platform!");
     }
 
 	if (!mce::Platform::OGL::InitBindings())
@@ -233,7 +228,8 @@ static void handle_events()
 					float x = event.button.x * scale;
 					float y = event.button.y * scale;
 					Mouse::feed(type, state, x, y);
-					Multitouch::feed(type, state, x, y, 0);
+					if (g_pAppPlatform->isTouchscreen())
+						Multitouch::feed(type, state, x, y, 0);
 				}
 				break;
 			}
@@ -244,7 +240,8 @@ static void handle_events()
 					float scale = g_fPointToPixelScale;
 					float x = event.motion.x * scale;
 					float y = event.motion.y * scale;
-					Multitouch::feed(MOUSE_BUTTON_NONE, false, x, y, 0);
+					if (g_pAppPlatform->isTouchscreen())
+						Multitouch::feed(MOUSE_BUTTON_NONE, false, x, y, 0);
 					Mouse::feed(MOUSE_BUTTON_NONE, false, x, y);
 					getPlatform()->setMouseDiff(event.motion.xrel * scale, event.motion.yrel * scale);
 				}
@@ -328,7 +325,7 @@ static void resize()
 	
 	// Update the scale multiplier. We use the same value, because we pass to `sizeUpdate`, the window width/height.
 	// They will be multiplied by the GUI scale multiplier, becoming the drawwidth and drawheight, times the decided on GUI scale.
-	Minecraft::setRenderScaleMultiplier(g_fPointToPixelScale);
+	Minecraft::SetRenderScaleMultiplier(g_fPointToPixelScale);
 	
 	// give it an update.
 	// As said before, internally, this multiplies by the GUI scale multiplier
@@ -444,6 +441,7 @@ int main(int argc, char *argv[])
 	// Start MCPE
 	UsedAppPlatform* appPlatform = new UsedAppPlatform(storagePath, window);
 	appPlatform->m_externalStorageDir = storagePath;
+  appPlatform->setVSyncEnabled(true);
 	g_pApp = new NinecraftApp;
 	g_pApp->init();
 	

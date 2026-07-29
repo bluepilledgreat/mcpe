@@ -36,7 +36,7 @@ private:
 public:
 	ItemStack();
 	ItemStack(const ItemStack& other);
-	ItemStack(bool isValid);
+	explicit ItemStack(bool isValid); // we don't want to be passing an ItemStack* to an ItemStack&, and have this get called instead
 	ItemStack(Item*);
 	ItemStack(Item*, int count);
 	ItemStack(Item*, int count, int auxValue);
@@ -66,28 +66,28 @@ public:
 	void set(int inCount);
 	bool canDestroySpecial(const Tile*);
 	std::string getDescriptionId();
-	std::string getHovertextName() const;
+	std::string getHovertextName();
 	float getDestroySpeed(const Tile*);
 	int getIcon() const;
 	int getMaxDamage() const;
 	int getMaxStackSize() const;
 	void hurt(int by);
-	void hurtAndBreak(int, Entity*);
-	void hurtEnemy(Mob*, Mob*);
-	void interactEnemy(Mob*);
+	void hurtAndBreak(int, Entity&);
+	void hurtEnemy(Mob&, Mob&);
+	void interactEnemy(Mob&);
 	bool isDamageableItem() const;
 	bool isDamaged() const;
 	bool isStackable() const;
 	bool isStackedByData() const;
-	void mineBlock(const TilePos& pos, Facing::Name face, Mob* mob);
+	void mineBlock(const TilePos& pos, Facing::Name face, Mob& mob);
 	void shrink(int count = 1);
 	ItemStack remove(int count);
 	void setDescriptionId(const std::string&);
-	void snap(Player*);
+	void snap(Player&);
 	std::string toString() const;
-	ItemStack* use(Level*, Mob*);
+	bool use(Mob&);
 	void releaseUsing(Level&, Mob&, int durationLeft);
-	bool useOn(Player*, Level*, const TilePos& pos, Facing::Name face);
+	bool useOn(Player&, const TilePos& pos, Facing::Name face);
 	void onCraftedBy(Player*, Level*);
 	void onCraftedBy(Player*, Level*, int amount);
 
@@ -95,13 +95,13 @@ public:
 	Item* getItem() const { return m_pItem; }
 	Tile* getTile() const { return m_pTile; }
 	bool isValid() const { return m_bValid; }
-	ItemStack* copy() const;
 
 	// v0.2.0
-	int getAttackDamage(Entity *pEnt) const;
-	//formerly known as isNull
+	int getAttackDamage(Entity &entity) const;
+	// formerly known as isNull
 	bool isEmpty() const;
 	void setEmpty();
+	bool sameIngredient(const ItemStack&) const;
 
 	// 0.12.1
 	int getBaseRepairCost() const;
@@ -113,7 +113,7 @@ public:
 	void load(const CompoundTag& tag);
 	CompoundTag& save(CompoundTag& tag) const;
 
-	//formerly known as isNull
+	// formerly known as isNull
 	static bool isEmpty(const ItemStack*);
 	static bool matches(const ItemStack&, const ItemStack&);
 	static ItemStack fromTag(const CompoundTag& tag);
@@ -126,6 +126,7 @@ public:
 public:
 	int16_t m_count;
 	int m_popTime;
+
 private:
     int16_t m_auxValue;
 	CompoundTag* m_userData;
