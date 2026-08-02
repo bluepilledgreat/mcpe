@@ -109,7 +109,7 @@ public:
 	bool containsLiquid(const AABB&, const Material*) const;
 	FullTile getTileAndData(const TilePos&) const; // unk type
 	bool isTopSolidBlocking(const TilePos&) const;
-	HitResult clip(const Vec3& A, const Vec3& B, bool liquid = false, bool solidOnly = false) const;
+	HitResult clip(const Vec3& A, const Vec3& B, bool includeLiquid = false, bool solidOnly = false) const;
 	float getSeenPercent(const Vec3&, const AABB&) const;
 	void getLightColor(const TilePos&, int) const; // unk type
 	Biome& getBiome(const TilePos&) const;

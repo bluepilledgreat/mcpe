@@ -381,7 +381,7 @@ Color RedStoneDustTile::getColor(Facing::Name face, TileData data) const
 	return Color(rt, gt, bt);
 }
 
-int RedStoneDustTile::getDirectSignal(const TileSource& source, const TilePos& pos, Facing::Name face) const
+int RedStoneDustTile::getDirectSignal(TileSource& source, const TilePos& pos, Facing::Name face) const
 {
 	return !m_bShouldSignal ? 0 : getSignal(source, pos, face);
 }

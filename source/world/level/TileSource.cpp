@@ -213,6 +213,7 @@ TileData TileSource::getData(const TilePos& pos)
 
 	return chunk->getData(pos);
 }
+
 Brightness_t TileSource::getRawBrightness(const TilePos& pos, bool unk)
 {
 	TileID tile = getTile(pos);
