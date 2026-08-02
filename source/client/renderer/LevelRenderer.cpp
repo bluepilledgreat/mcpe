@@ -1303,19 +1303,15 @@ void LevelRenderer::renderCracks(const Entity& camera, const HitResult& hr, int 
 
 			MatrixStack::Ref matrix = MatrixStack::World.push();
 
-			Tile* pTile = nullptr;
-			TileID tile = tileSource.getTile(hr.m_tilePos);
-			if (tile > 0)
-				pTile = Tile::tiles[tile];
+			TileID tileId = tileSource.getTile(hr.m_tilePos);
+			Tile* pTile = tileId > 0 ? Tile::tiles[tileId] : nullptr;
 
-			float px = camera.m_posPrev.x + (camera.m_pos.x - camera.m_posPrev.x) * a;
-			float py = camera.m_posPrev.y + (camera.m_pos.y - camera.m_posPrev.y) * a;
-			float pz = camera.m_posPrev.z + (camera.m_pos.z - camera.m_posPrev.z) * a;
+			Vec3 p = camera.m_posPrev + (camera.m_pos - camera.m_posPrev) * a;
 
 			Tesselator& t = Tesselator::instance;
 
-			t.begin(0);
-			t.setOffset(-px, -py, -pz);
+			t.begin(12);
+			t.setOffset(-p);
 			t.noColor();
 			if (!pTile)
 				pTile = Tile::rock;
@@ -1358,7 +1354,7 @@ void LevelRenderer::renderHitSelect(const Entity& camera, const HitResult& hr, i
 	float pz = camera.m_posPrev.z + (camera.m_pos.z - camera.m_posPrev.z) * a;
 
 	Tesselator& t = Tesselator::instance;
-	t.begin(0);
+	t.begin(12);
 	t.setOffset(-px, -py, -pz);
 	t.noColor();
 	if (!pTile)
@@ -1440,7 +1436,7 @@ void LevelRenderer::takePicture(TripodCamera* pCamera, Entity* pOwner)
 	static char str[256];
 	sprintf(str, "img_%.4d.png", getTimeMs());
 
-	m_pMinecraft->platform()->saveScreenshot(std::string(str), Minecraft::width, Minecraft::height);
+	AppPlatform::singleton()->saveScreenshot(std::string(str), Minecraft::width, Minecraft::height);
 }
 
 void LevelRenderer::addParticle(const std::string& name, const Vec3& pos, const Vec3& dir)
@@ -1483,9 +1479,9 @@ void LevelRenderer::addParticle(const std::string& name, const Vec3& pos, const 
 	{
 		ExplodeParticle* pExplPart = new ExplodeParticle(tileSource, pos, dir);
 		pExplPart->m_bIsUnlit = true;
-		pExplPart->m_rCol = Mth::random();
-		pExplPart->m_gCol = Mth::random();
-		pExplPart->m_bCol = Mth::random();
+		pExplPart->m_color.r = Mth::random();
+		pExplPart->m_color.g = Mth::random();
+		pExplPart->m_color.b = Mth::random();
 		pExplPart->scale(3.0f);
 		pe.add(pExplPart);
 		return;
@@ -1999,7 +1995,7 @@ void LevelRenderer::renderAdvancedClouds(float alpha)
 				if (yy <= h + 1.0f)
 				{
 					t.color(cc.r, cc.g, cc.b, 0.8f);
-					t.normal(0.0f, 1.0f, 0.0f);
+					t.normal(Vec3::UNIT_Y);
 					t.vertexUV((xp + 0.0f), (yy + h - e), (zp + D), ((xx + 0.0f) * scale + uo), ((zz + D) * scale + vo));
 					t.vertexUV((xp + D), (yy + h - e), (zp + D), ((xx + D) * scale + uo), ((zz + D) * scale + vo));
 					t.vertexUV((xp + D), (yy + h - e), (zp + 0.0f), ((xx + D) * scale + uo), ((zz + 0.0f) * scale + vo));

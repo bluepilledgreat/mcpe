@@ -41,7 +41,8 @@ public:
     virtual ItemStack quickMoveStack(Container::SlotID slotId);
     virtual void moveItemStackTo(ItemStack& item, Container::SlotID slotFrom, Container::SlotID slotTo, bool take);
 
-    void setItem(Container::SlotID slotId, ItemStack item);
+    void setItem(Container::SlotID slotId, const ItemStack& item);
+    bool trySetItem(Container::SlotID slotId, const ItemStack& item);
     void setAll(const std::vector<ItemStack>& items);
     virtual void setData(int id, int value);
 
@@ -62,7 +63,7 @@ public:
     void containerContentChanged(Container* container, Container::StackID stackId) override;
 
 protected:
-    std::vector<ItemStack> m_lastSlots;
+    std::vector<ItemStack> m_lastSentItems; // lastSlots in Java
     uint16_t m_changeUid;
     ContainerListeners m_listeners;
     std::set<Player*> m_unsynchedPlayers;

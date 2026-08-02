@@ -68,6 +68,11 @@ const char* Minecraft::progressMessages[] =
 	"Saving chunks",
 };
 
+static AppPlatform* platform()
+{
+	return AppPlatform::singleton();
+}
+
 Minecraft::Minecraft()
 {
 	m_pOptions = nullptr;
@@ -173,25 +178,25 @@ void Minecraft::_resetPlayer(Player* player)
 	player->resetPos();
 }
 
-GameMode* Minecraft::_createGameMode(GameType gameType, Level& level)
+GameMode* Minecraft::_createGameMode(GameType gameType)
 {
 	switch (gameType)
 	{
 	case GAME_TYPE_SURVIVAL:
-		return new SurvivalMode(this, level);
+		return new SurvivalMode(this);
 	case GAME_TYPE_CREATIVE:
-		return new CreativeMode(this, level);
+		return new CreativeMode(this);
 	default:
 		return nullptr;
 	}
 }
 
-void Minecraft::_initGameModes(Level& level)
+void Minecraft::_initGameModes()
 {
 	for (unsigned int gameType = GAME_TYPES_MIN; gameType <= GAME_TYPES_MAX; gameType++)
 	{
 		delete m_gameModes[gameType];
-		m_gameModes[gameType] = _createGameMode((GameType)gameType, level);
+		m_gameModes[gameType] = _createGameMode((GameType)gameType);
 	}
 }
 
@@ -223,7 +228,7 @@ void Minecraft::reloadInput()
 	{
 		m_pInputHolder = new CustomInputHolder(
 			new KeyboardInput(getOptions()),
-			new MouseTurnInput(this),
+			new MouseTurnInput(),
 			new MouseBuildInput()
 		);
 
@@ -254,7 +259,7 @@ void Minecraft::resetInputMethod()
 int Minecraft::getLicenseId()
 {
 	if (m_licenseID < 0)
-		m_licenseID = m_pPlatform->checkLicense();
+		m_licenseID = platform()->checkLicense();
 
 	return m_licenseID;
 }
@@ -609,6 +614,14 @@ void Minecraft::tickInput()
 		if (getTimeMs() - field_2B4 > 200)
 			continue;
 
+		MouseButtonType buttonType = Mouse::getEventButton();
+		bool bPressed = Mouse::getEventButtonState() == true;
+
+#ifdef ENH_ALLOW_SCROLL_WHEEL
+		if (buttonType == MOUSE_BUTTON_SCROLLWHEEL)
+			m_pGui->handleScrollWheel(bPressed);
+#endif
+
 		if (Mouse::isButtonDown(MOUSE_BUTTON_LEFT))
 		{
 			// @HACK: on SDL1, we don't recenter the mouse every tick, meaning the user can
@@ -620,14 +633,6 @@ void Minecraft::tickInput()
 				continue;
 			}
 		}
-
-		MouseButtonType buttonType = Mouse::getEventButton();
-		bool bPressed = Mouse::getEventButtonState() == true;
-
-#ifdef ENH_ALLOW_SCROLL_WHEEL
-		if (buttonType == MOUSE_BUTTON_SCROLLWHEEL)
-			m_pGui->handleScrollWheel(bPressed);
-#endif
 	}
 
 	if (useController())
@@ -785,7 +790,7 @@ void Minecraft::handleTextPaste(const std::string& text)
 
 void Minecraft::handleTextPaste()
 {
-	std::string text = AppPlatform::singleton()->getClipboardText();
+	std::string text = platform()->getClipboardText();
 	if (!text.empty())
 		handleTextPaste(text);
 }
@@ -1047,13 +1052,6 @@ void Minecraft::update()
 	mce::RenderContext& renderContext = mce::RenderContextImmediate::get();
 
 	renderContext.beginRender();
-
-	if (!m_bPreparingLevel)
-	{
-		GameMode* pGameMode = getLocalPlayerGameMode();
-		if (pGameMode)
-			pGameMode->render(m_timer.m_renderTicks);
-	}
 
 	m_pGameRenderer->render(m_timer);
 
@@ -1381,7 +1379,7 @@ void Minecraft::setLevel(Level* pLevel, const std::string& text, LocalPlayer* pL
 		m_bPreparingLevel = true;
 		m_pPrepThread = new CThread(&Minecraft::prepareLevel_tspawn, this);
 
-		_initGameModes(*pLevel);
+		_initGameModes();
 
 		if (m_pLocalPlayer)
 			setGameMode(m_pLocalPlayer->getPlayerGameType());

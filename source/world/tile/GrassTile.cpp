@@ -25,7 +25,7 @@ GrassTile::GrassTile(TileID id, Material* c) : Tile(id, c)
 	m_bBiomeColors = false;
 }
 
-int GrassTile::getColor(TileSource& source, const TilePos& pos) const
+Color GrassTile::getColor(TileSource& source, const TilePos& pos) const
 {
 	if (GrassColor::isAvailable() && m_bBiomeColors)
 	{
@@ -41,17 +41,17 @@ int GrassTile::getColor(TileSource& source, const TilePos& pos) const
 		return 0x339933;
 	}
 
-	return 0xffffff;
+	return Color::WHITE;
 }
 
-int GrassTile::getColor(Facing::Name face, TileData) const
+Color GrassTile::getColor(Facing::Name face, TileData) const
 {
 	if (GetPatchManager()->IsGrassTinted() && face == Facing::UP)
 	{
-		return GrassColor::get(1.0f, 0.5f);
+		return GrassColor::get(1.0f, 0.5f); // @PARITY-JAVA: should be 0xFF7CBD6B on b1.8, before that, nothing
 	}
 
-	return 0xffffff;
+	return Color::WHITE;
 }
 
 int GrassTile::getResource(TileData data, Random* random) const
