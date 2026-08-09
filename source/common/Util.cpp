@@ -76,6 +76,12 @@ class CUrlEncodeCharacterWhitelist
 private:
 	bool data[256];
 
+private:
+	void whitelist(char c)
+	{
+		data[static_cast<int32_t>(c)] = true;
+	}
+
 public:
 	CUrlEncodeCharacterWhitelist()
 	{
@@ -83,27 +89,27 @@ public:
 
 		// whitelist alphanumeric
 		for (char c = 'a'; c <= 'z'; ++c)
-			data[c] = true;
+			whitelist(c);
 		for (char c = 'A'; c <= 'Z'; ++c)
-			data[c] = true;
+			whitelist(c);
 		for (char c = '0'; c <= '9'; ++c)
-			data[c] = true;
+			whitelist(c);
 
 		// whitelist specific cases
-		data['-'] = true;
-		data['_'] = true;
-		data['.'] = true;
-		data['!'] = true;
-		data['~'] = true;
-		data['*'] = true;
-		data['\''] = true;
-		data['('] = true;
-		data[')'] = true;
+		whitelist('-');
+		whitelist('_');
+		whitelist('.');
+		whitelist('!');
+		whitelist('~');
+		whitelist('*');
+		whitelist('\'');
+		whitelist('(');
+		whitelist(')');
 	}
 
 	bool isWhitelisted(char c) const
 	{
-		return data[c];
+		return data[static_cast<int32_t>(c)];
 	}
 };
 
