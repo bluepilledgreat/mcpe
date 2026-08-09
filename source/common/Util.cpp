@@ -167,7 +167,7 @@ std::string Util::toString(int32_t value)
 	if (value < 0)
 		*(--ptr) = '-';
 
-	return ptr;
+	return std::string(ptr, sizeof(buffer) - (ptr - buffer));
 }
 
 std::string Util::toString(float value)
