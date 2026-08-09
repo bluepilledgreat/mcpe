@@ -152,7 +152,9 @@ std::string Util::toString(int value)
 	*(--ptr) = '\0';
 
 	// Use unsigned to safely handle INT_MIN
-	uint32_t absValue = static_cast<uint32_t>((value < 0) ? -value : value);
+	uint32_t absValue = static_cast<uint32_t>(value);
+	if (value < 0)
+		absValue = 0 - absValue;
 
 	// Build the string backwards (more efficient than calculating powers of 10)
 	while (absValue > 0)
