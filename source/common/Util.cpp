@@ -99,12 +99,7 @@ public:
 		whitelist('-');
 		whitelist('_');
 		whitelist('.');
-		whitelist('!');
 		whitelist('~');
-		whitelist('*');
-		whitelist('\'');
-		whitelist('(');
-		whitelist(')');
 	}
 
 	bool isWhitelisted(char c) const
