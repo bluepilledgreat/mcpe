@@ -120,9 +120,12 @@ std::string Util::urlEncode(const std::string& str)
 		if (!UrlEncodeCharacterWhitelist.isWhitelisted(str[i]))
 			extraSize += 2; // we need an additional 2 characters ('?' to '%??')
 
-	std::string output(str.size() + extraSize, '\0');
+	std::string output;
+	output.reserve(str.size() + extraSize);
 
-	uint8_t* ptr = reinterpret_cast<uint8_t*>(&output[0]);
+	char buffer[3];
+	buffer[0] = '%';
+
 	for (std::string::size_type i = 0; i < str.size(); ++i)
 	{
 		uint8_t c = str[i];
@@ -133,13 +136,13 @@ std::string Util::urlEncode(const std::string& str)
 			int cDiv16 = static_cast<int>(c) / 16;
 			int cMod16 = static_cast<int>(c) % 16;
 
-			*(ptr++) = '%';
-			*(ptr++) = (cDiv16 <= 9) ? ('0' + cDiv16) : ('A' + cDiv16 - 10);
-			*(ptr++) = (cMod16 <= 9) ? ('0' + cMod16) : ('A' + cMod16 - 10);
+			buffer[1] = (cDiv16 <= 9) ? ('0' + cDiv16) : ('A' + cDiv16 - 10);
+			buffer[2] = (cMod16 <= 9) ? ('0' + cMod16) : ('A' + cMod16 - 10);
+			output.append(buffer, sizeof(buffer));
 		}
 		else
 		{
-			*(ptr++) = c;
+			output += c;
 		}
 	}
 
