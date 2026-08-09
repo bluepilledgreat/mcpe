@@ -77,9 +77,9 @@ private:
 	bool data[256];
 
 private:
-	void whitelist(char c)
+	void whitelist(uint8_t c)
 	{
-		data[static_cast<int32_t>(c)] = true;
+		data[c] = true;
 	}
 
 public:
@@ -88,11 +88,11 @@ public:
 		memset(data, false, sizeof(data));
 
 		// whitelist alphanumeric
-		for (char c = 'a'; c <= 'z'; ++c)
+		for (uint8_t c = 'a'; c <= 'z'; ++c)
 			whitelist(c);
-		for (char c = 'A'; c <= 'Z'; ++c)
+		for (uint8_t c = 'A'; c <= 'Z'; ++c)
 			whitelist(c);
-		for (char c = '0'; c <= '9'; ++c)
+		for (uint8_t c = '0'; c <= '9'; ++c)
 			whitelist(c);
 
 		// whitelist specific cases
@@ -102,9 +102,9 @@ public:
 		whitelist('~');
 	}
 
-	bool isWhitelisted(char c) const
+	bool isWhitelisted(uint8_t c) const
 	{
-		return data[static_cast<int32_t>(c)];
+		return data[c];
 	}
 };
 
@@ -122,10 +122,10 @@ std::string Util::urlEncode(const std::string& str)
 
 	std::string output(str.size() + extraSize, '\0');
 
-	char* ptr = &output[0];
+	uint8_t* ptr = reinterpret_cast<uint8_t*>(&output[0]);
 	for (std::string::size_type i = 0; i < str.size(); ++i)
 	{
-		char c = str[i];
+		uint8_t c = str[i];
 
 		if (!UrlEncodeCharacterWhitelist.isWhitelisted(c))
 		{
