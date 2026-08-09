@@ -139,7 +139,7 @@ std::string Util::getExtension(const std::string& path)
 	return path.substr(dotPos + 1);
 }
 
-std::string Util::toString(int value)
+std::string Util::toString(int32_t value)
 {
 	// Handle zero explicitly
 	if (value == 0)
