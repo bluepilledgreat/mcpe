@@ -79,7 +79,7 @@ public:
 		{
 			std::lock_guard<std::mutex> lock(m_poolMutex);
 
-			assert(m_pool.find(ptr) == m_pool.end());
+			assert(std::find(m_pool.begin(), m_pool.end(), ptr) == m_pool.end());
 			m_pool.push_back(ptr);
 		}
 
