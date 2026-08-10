@@ -28,6 +28,14 @@ private:
 
 	static void _Destroy(void* ptr)
 	{
+		{
+			std::lock_guard<std::mutex> lock(m_poolMutex);
+
+			typename std::vector<T*>::iterator it = std::find(m_pool.begin(), m_pool.end(), ptr);
+			assert(it != m_pool.end());
+			m_pool.erase(it);
+		}
+
 		delete reinterpret_cast<T*>(ptr);
 	}
 
@@ -96,14 +104,6 @@ public:
 		T* storedPtr = _get();
 		if (!storedPtr)
 			return;
-
-		{
-			std::lock_guard<std::mutex> lock(m_poolMutex);
-
-			typename std::vector<T*>::iterator it = std::find(m_pool.begin(), m_pool.end(), storedPtr);
-			assert(it != m_pool.end());
-			m_pool.erase(it);
-		}
 
 		pthread_setspecific(m_key, nullptr);
 	}
