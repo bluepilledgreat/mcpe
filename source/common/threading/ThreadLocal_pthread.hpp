@@ -5,10 +5,15 @@
 #include <vector>
 #include <mutex>
 #include <algorithm>
+#include <map>
 
 template<typename T>
 class ThreadLocal
 {
+private:
+	static std::map<T*, ThreadLocal<T>*> Owners;
+	static std::mutex OwnersMutex;
+
 private:
 	pthread_key_t m_key;
 	T* (*m_creatorFunction)();
@@ -28,15 +33,30 @@ private:
 
 	static void _Destroy(void* ptr)
 	{
-		{
-			std::lock_guard<std::mutex> lock(m_poolMutex);
+		T* obj = reinterpret_cast<T*>(ptr);
 
-			typename std::vector<T*>::iterator it = std::find(m_pool.begin(), m_pool.end(), ptr);
-			assert(it != m_pool.end());
-			m_pool.erase(it);
+		{
+			ThreadLocal<T>* owningLocal;
+
+			{
+				std::lock_guard<std::mutex> lock(OwnersMutex);
+
+				std::map<T*, ThreadLocal<T>*>::iterator it = Owners.find(obj);
+				assert(it != Owners.end());
+				owningLocal = it->second;
+				Owners.erase(it);
+			}
+
+			{
+				std::lock_guard<std::mutex> lock(owningLocal->m_poolMutex);
+
+				typename std::vector<T*>::iterator it = std::find(owningLocal->m_pool.begin(), owningLocal->m_pool.end(), obj);
+				assert(it != m_pool.end());
+				owningLocal->m_pool.erase(it);
+			}
 		}
 
-		delete reinterpret_cast<T*>(ptr);
+		delete obj;
 	}
 
 public:
@@ -82,6 +102,12 @@ public:
 		{
 			delete ptr;
 			throw std::runtime_error("pthread_setspecific failed");
+		}
+
+		{
+			std::lock_guard<std::mutex> lock(OwnersMutex);
+
+			Owners[ptr] = this;
 		}
 
 		{
