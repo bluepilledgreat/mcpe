@@ -139,5 +139,8 @@
     <ClInclude Include="$(MC_ROOT)\source\common\MovePriorityQueue.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="$(MC_ROOT)\source\common\threading\ThreadLocal.hpp">
+      <Filter>Header Files\Threading</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>
