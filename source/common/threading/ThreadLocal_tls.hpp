@@ -1,0 +1,110 @@
+#pragma once
+#include <Windows.h>
+#include <cassert>
+#include <stdexcept>
+#include <vector>
+#include <mutex>
+#include <algorithm>
+
+// NOTE: TLS does not destruct objects automatically on thread exit
+// Please refrain from spawning random threads that call ThreadLocal
+template<typename T>
+class ThreadLocal
+{
+private:
+	DWORD m_key;
+	T* (*m_creatorFunction)();
+	std::vector<T*> m_pool;
+	std::mutex m_poolMutex;
+
+private:
+	// disable copy constructors
+	ThreadLocal(const ThreadLocal&);
+	ThreadLocal& operator=(const ThreadLocal&);
+
+private:
+	static T* _Create()
+	{
+		return new T();
+	}
+
+public:
+	ThreadLocal()
+		: m_key(TlsAlloc())
+		, m_creatorFunction(_Create)
+	{
+		if (m_key == TLS_OUT_OF_INDEXES)
+			throw std::runtime_error("TLS_OUT_OF_INDEXES");
+	}
+
+	ThreadLocal(T* (*creatorFunction)())
+		: m_key(TlsAlloc())
+		, m_creatorFunction(creatorFunction)
+	{
+		if (m_key == TLS_OUT_OF_INDEXES)
+			throw std::runtime_error("TLS_OUT_OF_INDEXES");
+	}
+
+	~ThreadLocal()
+	{
+		BOOL result = TlsFree(m_key);
+		assert(result == TRUE);
+
+		for (typename std::vector<T*>::iterator it = m_pool.begin(); it != m_pool.end(); it++)
+			delete (*it);
+	}
+
+private:
+	T* _get() const
+	{
+		return reinterpret_cast<T*>(TlsGetValue(m_key));
+	}
+
+public:
+	T& getLocal()
+	{
+		T* storedPtr = _get();
+		if (storedPtr)
+			return *storedPtr;
+
+		T* ptr = m_creatorFunction();
+		BOOL result = TlsSetValue(m_key, ptr);
+		if (!result)
+		{
+			delete ptr;
+			throw std::runtime_error("TlsSetValue failed");
+		}
+
+		{
+			std::lock_guard<std::mutex> lock(m_poolMutex);
+
+			assert(m_pool.find(ptr) == m_pool.end());
+			m_pool.push_back(ptr);
+		}
+
+		return *ptr;
+	}
+
+	T* getLocalPtr()
+	{
+		return &getLocal();
+	}
+
+	void resetLocal()
+	{
+		T* storedPtr = _get();
+		if (!storedPtr)
+			return;
+
+		{
+			std::lock_guard<std::mutex> lock(m_poolMutex);
+
+			typename std::vector<T*>::iterator it = std::find(m_pool.begin(), m_pool.end(), storedPtr);
+			assert(it != m_pool.end());
+			m_pool.erase(it);
+		}
+
+		delete storedPtr;
+		TlsSetValue(m_key, nullptr);
+	}
+};

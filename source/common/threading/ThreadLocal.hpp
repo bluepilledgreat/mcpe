@@ -8,7 +8,10 @@
 
 #else
 
-// FLS approach (Windows)
-#include "common/threading/ThreadLocal_fls.hpp"
+// TLS approach (Windows XP and newer)
+#include "common/threading/ThreadLocal_tls.hpp"
+
+// FLS approach (Windows Vista and newer)
+//#include "common/threading/ThreadLocal_fls.hpp"
 
 #endif

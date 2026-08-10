@@ -142,5 +142,11 @@
     <ClInclude Include="$(MC_ROOT)\source\common\threading\ThreadLocal.hpp">
       <Filter>Header Files\Threading</Filter>
     </ClInclude>
+    <ClInclude Include="$(MC_ROOT)\source\common\threading\ThreadLocal_fls.hpp">
+      <Filter>Header Files\Threading</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MC_ROOT)\source\common\threading\ThreadLocal_tls.hpp">
+      <Filter>Header Files\Threading</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>
