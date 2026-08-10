@@ -41,7 +41,7 @@ private:
 			{
 				std::lock_guard<std::mutex> lock(OwnersMutex);
 
-				std::map<T*, ThreadLocal<T>*>::iterator it = Owners.find(obj);
+				typename std::map<T*, ThreadLocal<T>*>::iterator it = Owners.find(obj);
 				assert(it != Owners.end());
 				owningLocal = it->second;
 				Owners.erase(it);
@@ -79,8 +79,21 @@ public:
 		int result = pthread_key_delete(m_key);
 		assert(result == 0);
 
-		for (typename std::vector<T*>::iterator it = m_pool.begin(); it != m_pool.end(); it++)
-			delete (*it);
+		{
+			std::lock_guard<std::mutex> lock(OwnersMutex);
+
+			for (typename std::vector<T*>::iterator it = m_pool.begin(); it != m_pool.end(); it++)
+			{
+				typename std::map<T*, ThreadLocal<T>*>::iterator mapIt = Owners.find(*it);
+				assert(mapIt != Owners.end());
+				Owners.erase(mapIt);
+			}
+		}
+
+		{
+			for (typename std::vector<T*>::iterator it = m_pool.begin(); it != m_pool.end(); it++)
+				delete (*it);
+		}
 	}
 
 private:
