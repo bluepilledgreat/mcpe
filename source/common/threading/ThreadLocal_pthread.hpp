@@ -2,6 +2,9 @@
 #include <pthread.h>
 #include <cassert>
 #include <stdexcept>
+#include <vector>
+#include <mutex>
+#include <algorithm>
 
 template<typename T>
 class ThreadLocal
@@ -45,6 +48,9 @@ public:
 	{
 		int result = pthread_key_delete(m_key);
 		assert(result == 0);
+
+		for (typename std::vector<T*>::iterator it = m_pool.begin(); it != m_pool.end(); it++)
+			delete (*it);
 	}
 
 private:
@@ -68,6 +74,13 @@ public:
 			throw std::runtime_error("pthread_setspecific failed");
 		}
 
+		{
+			std::lock_guard<std::mutex> lock(m_poolMutex);
+
+			assert(m_pool.find(ptr) == m_pool.end());
+			m_pool.push_back(ptr);
+		}
+
 		return *ptr;
 	}
 
@@ -81,6 +94,14 @@ public:
 		T* storedPtr = _get();
 		if (!storedPtr)
 			return;
+
+		{
+			std::lock_guard<std::mutex> lock(m_poolMutex);
+
+			typename std::vector<T*>::iterator it = std::find(m_pool.begin(), m_pool.end(), storedPtr);
+			assert(it != m_pool.end());
+			m_pool.erase(it);
+		}
 
 		pthread_setspecific(m_key, nullptr);
 	}
