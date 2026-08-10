@@ -12,6 +12,8 @@ class ThreadLocal
 private:
 	pthread_key_t m_key;
 	T* (*m_creatorFunction)();
+	std::vector<T*> m_pool;
+	std::mutex m_poolMutex;
 
 private:
 	// disable copy constructors
