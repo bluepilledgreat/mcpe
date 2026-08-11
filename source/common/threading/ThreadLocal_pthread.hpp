@@ -14,8 +14,8 @@ public:
 	typedef T* (*CreatorFunction_t)();
 
 private:
-	static std::map<T*, ThreadLocal<T>*> Owners;
-	static Mutex OwnersMutex;
+	static std::map<T*, ThreadLocal<T>*> owners;
+	static Mutex ownersMutex;
 
 private:
 	pthread_key_t m_key;
@@ -42,12 +42,12 @@ private:
 			ThreadLocal<T>* owningLocal;
 
 			{
-				LockGuard<Mutex> lock(OwnersMutex);
+				LockGuard<Mutex> lock(ownersMutex);
 
-				typename std::map<T*, ThreadLocal<T>*>::iterator it = Owners.find(obj);
-				assert(it != Owners.end());
+				typename std::map<T*, ThreadLocal<T>*>::iterator it = owners.find(obj);
+				assert(it != owners.end());
 				owningLocal = it->second;
-				Owners.erase(it);
+				owners.erase(it);
 			}
 
 			{
@@ -83,13 +83,13 @@ public:
 		assert(result == 0);
 
 		{
-			LockGuard<Mutex> lock(OwnersMutex);
+			LockGuard<Mutex> lock(ownersMutex);
 
 			for (typename std::vector<T*>::iterator it = m_pool.begin(); it != m_pool.end(); it++)
 			{
-				typename std::map<T*, ThreadLocal<T>*>::iterator mapIt = Owners.find(*it);
-				assert(mapIt != Owners.end());
-				Owners.erase(mapIt);
+				typename std::map<T*, ThreadLocal<T>*>::iterator mapIt = owners.find(*it);
+				assert(mapIt != owners.end());
+				owners.erase(mapIt);
 			}
 		}
 
