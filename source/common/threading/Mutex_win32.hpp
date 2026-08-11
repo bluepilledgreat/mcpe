@@ -4,11 +4,11 @@
 
 #ifdef _DEBUG
 
-// Enables recursive detection
-// To ensure that Mutex is always used in a non-recursive way on Windows
-// This is done to prevent deadlocks on other systems
+// Enables recursion detection
+// Ensures that Mutex is always used in a non-recursive way on Windows
+// This can be used to prevent deadlocks on other systems
 // as critical sections are recursive safe
-#define _MUTEX_DEBUG_RECURSIVE_DETECTION_
+#define _MUTEX_DEBUG_RECURSION_DETECTION_
 
 #endif
 
@@ -16,7 +16,7 @@ class Mutex
 {
 private:
 	CRITICAL_SECTION m_criticalSection;
-#ifdef _MUTEX_DEBUG_RECURSIVE_DETECTION_
+#ifdef _MUTEX_DEBUG_RECURSION_DETECTION_
 	DWORD m_owningThreadId;
 #endif
 
@@ -30,7 +30,7 @@ public:
 	{
 		InitializeCriticalSection(&m_criticalSection);
 
-#ifdef _MUTEX_DEBUG_RECURSIVE_DETECTION_
+#ifdef _MUTEX_DEBUG_RECURSION_DETECTION_
 		m_owningThreadId = 0;
 #endif
 	}
@@ -43,7 +43,7 @@ public:
 public:
 	void lock()
 	{
-#ifdef _MUTEX_DEBUG_RECURSIVE_DETECTION_
+#ifdef _MUTEX_DEBUG_RECURSION_DETECTION_
 		if (m_owningThreadId == GetCurrentThreadId())
 		{
 			// Recursion is now allowed with regular mutexes
@@ -53,14 +53,14 @@ public:
 
 		EnterCriticalSection(&m_criticalSection);
 
-#ifdef _MUTEX_DEBUG_RECURSIVE_DETECTION_
+#ifdef _MUTEX_DEBUG_RECURSION_DETECTION_
 		m_owningThreadId = GetCurrentThreadId();
 #endif
 	}
 
 	void unlock()
 	{
-#ifdef _MUTEX_DEBUG_RECURSIVE_DETECTION_
+#ifdef _MUTEX_DEBUG_RECURSION_DETECTION_
 		if (m_owningThreadId == GetCurrentThreadId())
 			m_owningThreadId = 0;
 #endif
@@ -102,6 +102,6 @@ public:
 	}
 };
 
-#ifdef _MUTEX_DEBUG_RECURSIVE_DETECTION_
-#undef _MUTEX_DEBUG_RECURSIVE_DETECTION_
+#ifdef _MUTEX_DEBUG_RECURSION_DETECTION_
+#undef _MUTEX_DEBUG_RECURSION_DETECTION_
 #endif
