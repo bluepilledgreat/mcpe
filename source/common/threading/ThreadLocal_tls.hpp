@@ -3,8 +3,8 @@
 #include <cassert>
 #include <stdexcept>
 #include <vector>
-#include <mutex>
 #include <algorithm>
+#include "common/threading/Mutex.hpp"
 
 // NOTE: TLS does not destruct objects automatically on thread exit
 // Please refrain from spawning random threads that call ThreadLocal
@@ -15,7 +15,7 @@ private:
 	DWORD m_key;
 	T* (*m_creatorFunction)();
 	std::vector<T*> m_pool;
-	std::mutex m_poolMutex;
+	Mutex m_poolMutex;
 
 private:
 	// disable copy constructors
@@ -76,7 +76,7 @@ public:
 		}
 
 		{
-			std::lock_guard<std::mutex> lock(m_poolMutex);
+			LockGuard<Mutex> lock(m_poolMutex);
 
 			assert(std::find(m_pool.begin(), m_pool.end(), ptr) == m_pool.end());
 			m_pool.push_back(ptr);
@@ -97,7 +97,7 @@ public:
 			return;
 
 		{
-			std::lock_guard<std::mutex> lock(m_poolMutex);
+			LockGuard<Mutex> lock(m_poolMutex);
 
 			typename std::vector<T*>::iterator it = std::find(m_pool.begin(), m_pool.end(), storedPtr);
 			assert(it != m_pool.end());

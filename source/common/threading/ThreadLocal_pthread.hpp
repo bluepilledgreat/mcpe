@@ -3,22 +3,22 @@
 #include <cassert>
 #include <stdexcept>
 #include <vector>
-#include <mutex>
 #include <algorithm>
 #include <map>
+#include "common/threading/Mutex.hpp"
 
 template<typename T>
 class ThreadLocal
 {
 private:
 	static std::map<T*, ThreadLocal<T>*> Owners;
-	static std::mutex OwnersMutex;
+	static Mutex OwnersMutex;
 
 private:
 	pthread_key_t m_key;
 	T* (*m_creatorFunction)();
 	std::vector<T*> m_pool;
-	std::mutex m_poolMutex;
+	Mutex m_poolMutex;
 
 private:
 	// disable copy constructors
@@ -39,7 +39,7 @@ private:
 			ThreadLocal<T>* owningLocal;
 
 			{
-				std::lock_guard<std::mutex> lock(OwnersMutex);
+				LockGuard<Mutex> lock(OwnersMutex);
 
 				typename std::map<T*, ThreadLocal<T>*>::iterator it = Owners.find(obj);
 				assert(it != Owners.end());
@@ -48,7 +48,7 @@ private:
 			}
 
 			{
-				std::lock_guard<std::mutex> lock(owningLocal->m_poolMutex);
+				LockGuard<Mutex> lock(owningLocal->m_poolMutex);
 
 				typename std::vector<T*>::iterator it = std::find(owningLocal->m_pool.begin(), owningLocal->m_pool.end(), obj);
 				assert(it != m_pool.end());
@@ -80,7 +80,7 @@ public:
 		assert(result == 0);
 
 		{
-			std::lock_guard<std::mutex> lock(OwnersMutex);
+			LockGuard<Mutex> lock(OwnersMutex);
 
 			for (typename std::vector<T*>::iterator it = m_pool.begin(); it != m_pool.end(); it++)
 			{
@@ -118,13 +118,13 @@ public:
 		}
 
 		{
-			std::lock_guard<std::mutex> lock(OwnersMutex);
+			LockGuard<Mutex> lock(OwnersMutex);
 
 			Owners[ptr] = this;
 		}
 
 		{
-			std::lock_guard<std::mutex> lock(m_poolMutex);
+			LockGuard<Mutex> lock(m_poolMutex);
 
 			assert(std::find(m_pool.begin(), m_pool.end(), ptr) == m_pool.end());
 			m_pool.push_back(ptr);
