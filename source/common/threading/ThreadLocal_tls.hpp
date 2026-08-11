@@ -1,5 +1,5 @@
 #pragma once
-#include <Windows.h>
+#include <windows.h>
 #include <cassert>
 #include <stdexcept>
 #include <vector>
