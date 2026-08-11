@@ -10,13 +10,16 @@
 template<typename T>
 class ThreadLocal
 {
+public:
+	typedef T* (*CreatorFunction_t)();
+
 private:
 	static std::map<T*, ThreadLocal<T>*> Owners;
 	static Mutex OwnersMutex;
 
 private:
 	pthread_key_t m_key;
-	T* (*m_creatorFunction)();
+	CreatorFunction_t m_creatorFunction;
 	std::vector<T*> m_pool;
 	Mutex m_poolMutex;
 
@@ -67,7 +70,7 @@ public:
 			throw std::runtime_error("pthread_key_create failed");
 	}
 
-	ThreadLocal(T* (*creatorFunction)())
+	ThreadLocal(CreatorFunction_t creatorFunction)
 		: m_creatorFunction(creatorFunction)
 	{
 		if (pthread_key_create(&m_key, _Destroy) != 0)

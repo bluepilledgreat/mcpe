@@ -6,9 +6,12 @@
 template<typename T>
 class ThreadLocal
 {
+public:
+	typedef T* (*CreatorFunction_t)();
+
 private:
 	DWORD m_key;
-	T* (*m_creatorFunction)();
+	CreatorFunction_t m_creatorFunction;
 
 private:
 	// disable copy constructors
@@ -35,7 +38,7 @@ public:
 			throw std::runtime_error("FLS_OUT_OF_INDEXES");
 	}
 
-	ThreadLocal(T* (*creatorFunction)())
+	ThreadLocal(CreatorFunction_t creatorFunction)
 		: m_key(FlsAlloc(_Destroy))
 		, m_creatorFunction(creatorFunction)
 	{

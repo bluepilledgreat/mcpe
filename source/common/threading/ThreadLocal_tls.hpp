@@ -11,9 +11,12 @@
 template<typename T>
 class ThreadLocal
 {
+public:
+	typedef T* (*CreatorFunction_t)();
+
 private:
 	DWORD m_key;
-	T* (*m_creatorFunction)();
+	CreatorFunction_t m_creatorFunction;
 	std::vector<T*> m_pool;
 	Mutex m_poolMutex;
 
@@ -37,7 +40,7 @@ public:
 			throw std::runtime_error("TLS_OUT_OF_INDEXES");
 	}
 
-	ThreadLocal(T* (*creatorFunction)())
+	ThreadLocal(CreatorFunction_t creatorFunction)
 		: m_key(TlsAlloc())
 		, m_creatorFunction(creatorFunction)
 	{
