@@ -1,0 +1,107 @@
+#pragma once
+#include <Windows.h>
+#include <cassert>
+
+#ifdef _DEBUG
+
+// Enables recursive detection
+// To ensure that Mutex is always used in a non-recursive way on Windows
+// This is done to prevent deadlocks on other systems
+// as critical sections are recursive safe
+#define _MUTEX_DEBUG_RECURSIVE_DETECTION_
+
+#endif
+
+class Mutex
+{
+private:
+	CRITICAL_SECTION m_criticalSection;
+#ifdef _MUTEX_DEBUG_RECURSIVE_DETECTION_
+	DWORD m_owningThreadId;
+#endif
+
+private:
+	// disable copy constructors
+	Mutex(const Mutex&);
+	Mutex& operator=(const Mutex&);
+
+public:
+	Mutex()
+	{
+		InitializeCriticalSection(&m_criticalSection);
+
+#ifdef _MUTEX_DEBUG_RECURSIVE_DETECTION_
+		m_owningThreadId = 0;
+#endif
+	}
+
+	~Mutex()
+	{
+		DeleteCriticalSection(&m_criticalSection);
+	}
+
+public:
+	void lock()
+	{
+#ifdef _MUTEX_DEBUG_RECURSIVE_DETECTION_
+		if (m_owningThreadId == GetCurrentThreadId())
+		{
+			// Recursion is now allowed with regular mutexes
+			DebugBreak();
+		}
+#endif
+
+		EnterCriticalSection(&m_criticalSection);
+
+#ifdef _MUTEX_DEBUG_RECURSIVE_DETECTION_
+		m_owningThreadId = GetCurrentThreadId();
+#endif
+	}
+
+	void unlock()
+	{
+#ifdef _MUTEX_DEBUG_RECURSIVE_DETECTION_
+		if (m_owningThreadId == GetCurrentThreadId())
+			m_owningThreadId = 0;
+#endif
+
+		LeaveCriticalSection(&m_criticalSection);
+	}
+};
+
+class RecursiveMutex
+{
+private:
+	CRITICAL_SECTION m_criticalSection;
+
+private:
+	// disable copy constructors
+	RecursiveMutex(const RecursiveMutex&);
+	RecursiveMutex& operator=(const RecursiveMutex&);
+
+public:
+	RecursiveMutex()
+	{
+		InitializeCriticalSection(&m_criticalSection);
+	}
+
+	~RecursiveMutex()
+	{
+		DeleteCriticalSection(&m_criticalSection);
+	}
+
+public:
+	void lock()
+	{
+		EnterCriticalSection(&m_criticalSection);
+	}
+
+	void unlock()
+	{
+		LeaveCriticalSection(&m_criticalSection);
+	}
+};
+
+#ifdef _MUTEX_DEBUG_RECURSIVE_DETECTION_
+#undef _MUTEX_DEBUG_RECURSIVE_DETECTION_
+#endif
