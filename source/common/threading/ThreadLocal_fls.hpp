@@ -59,11 +59,11 @@ private:
 	}
 
 public:
-	T& getLocal()
+	T* getLocalPtr()
 	{
 		T* storedPtr = _get();
 		if (storedPtr)
-			return *storedPtr;
+			return storedPtr;
 
 		T* ptr = m_creatorFunction();
 		BOOL result = FlsSetValue(m_key, ptr);
@@ -73,12 +73,12 @@ public:
 			throw std::runtime_error("FlsSetValue failed");
 		}
 
-		return *ptr;
+		return ptr;
 	}
 
-	T* getLocalPtr()
+	T& getLocal()
 	{
-		return &getLocal();
+		return *getLocalPtr();
 	}
 
 	void resetLocal()

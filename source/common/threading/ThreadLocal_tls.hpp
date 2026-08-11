@@ -64,11 +64,11 @@ private:
 	}
 
 public:
-	T& getLocal()
+	T* getLocalPtr()
 	{
 		T* storedPtr = _get();
 		if (storedPtr)
-			return *storedPtr;
+			return storedPtr;
 
 		T* ptr = m_creatorFunction();
 		BOOL result = TlsSetValue(m_key, ptr);
@@ -85,12 +85,12 @@ public:
 			m_pool.push_back(ptr);
 		}
 
-		return *ptr;
+		return ptr;
 	}
 
-	T* getLocalPtr()
+	T& getLocal()
 	{
-		return &getLocal();
+		return *getLocalPtr();
 	}
 
 	void resetLocal()
