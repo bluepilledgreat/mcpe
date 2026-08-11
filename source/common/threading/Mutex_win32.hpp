@@ -7,7 +7,7 @@
 // Enables recursion detection
 // Ensures that Mutex is always used in a non-recursive way on Windows
 // This can be used to prevent deadlocks on other systems
-// as critical sections are recursive safe
+// as critical sections on Windows are recursion safe
 #define _MUTEX_DEBUG_RECURSION_DETECTION_
 
 #endif
