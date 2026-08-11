@@ -5,9 +5,13 @@
 
 #include "common/threading/Mutex_pthread.hpp"
 
-#else
+#elif defined(_WIN32)
 
 #include "common/threading/Mutex_win32.hpp"
+
+#else
+
+#error "Missing Mutex implementation for platform"
 
 #endif
 
