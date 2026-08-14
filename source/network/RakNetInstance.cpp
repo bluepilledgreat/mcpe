@@ -14,6 +14,8 @@
 #include "MinecraftPackets.hpp"
 #include "NetEventCallback.hpp"
 
+#include "common/profiler/Profiler.hpp"
+
 //#define LOG_PACKETS
 
 /* !! FOR XBOX 360 !!
@@ -155,6 +157,8 @@ void RakNetInstance::pingForHosts(int port)
 
 void RakNetInstance::runEvents(NetEventCallback& callback)
 {
+	PROFILE_FUNCTION();
+
 	while (true)
 	{
 		RakNet::Packet* pPacket = m_pRakPeerInterface->Receive();

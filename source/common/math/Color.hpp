@@ -221,6 +221,17 @@ public:
     }
 
 public:
+    static Color FromRGB(uint8_t r, uint8_t g, uint8_t b)
+    {
+        return Color(r, g, b);
+    }
+
+    static Color FromRGBA(uint8_t r, uint8_t g, uint8_t b, uint8_t a)
+    {
+        return Color(r, g, b, a);
+    }
+
+public:
     static Color SHADE_WEST_EAST;
     static Color SHADE_NORTH_SOUTH;
     static Color SHADE_UP;

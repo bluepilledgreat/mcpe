@@ -10,6 +10,7 @@
 #include "ParticleEngine.hpp"
 #include "client/renderer/renderer/RenderMaterialGroup.hpp"
 #include "world/level/TileSource.hpp"
+#include "common/profiler/Profiler.hpp"
 
 ParticleEngine::Materials::Materials()
 {
@@ -196,6 +197,8 @@ void ParticleEngine::render(const Entity& camera, float f)
 
 void ParticleEngine::renderLit(const Entity& camera, float a)
 {
+	PROFILE_FUNCTION();
+
 	int tt = 3;
 	if (m_particles[tt].size() != 0)
 	{

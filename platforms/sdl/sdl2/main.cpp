@@ -336,6 +336,8 @@ static void resize()
 // Main Loop
 static EM_BOOL main_loop(double time, void *user_data)
 {
+	PROFILE_FUNCTION();
+
 	// Handle Events
 	handle_events();
 

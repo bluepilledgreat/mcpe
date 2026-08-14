@@ -225,6 +225,56 @@ void Font::drawSlow(const std::string& str, int x, int y, const Color& color, bo
 	t.draw(m_materials.ui_text);
 }
 
+void Font::drawSlowV2(const std::string& str, int x, int y, const Color& color, bool bShadow)
+{
+	if (str.empty()) return;
+
+	if (bShadow)
+	{
+		currentShaderDarkColor = Color(0.25f, 0.25f, 0.25f);
+	}
+	else
+	{
+		currentShaderDarkColor = Color::WHITE;
+	}
+
+	m_pTextures->loadAndBindTexture(m_fileName);
+
+	Color finalColor = color;
+	// For hex colors which don't specify an alpha
+	if (finalColor.a == 0.0f)
+		finalColor.a = 1.0f;
+
+#ifndef FEATURE_GFX_SHADERS
+	finalColor *= currentShaderDarkColor;
+#endif
+
+	Tesselator& t = Tesselator::instance;
+	t.begin(4 * str.size());
+
+	t.color(finalColor);
+
+	float cXPos = static_cast<float>(x), cYPos = static_cast<float>(y);
+
+	for (size_t i = 0; i < str.size(); i++)
+	{
+		if (str[i] == '\n')
+		{
+			cYPos += RENDER_XY_SIZE + 2.0f;
+			cXPos = static_cast<float>(x);
+			continue;
+		}
+
+		uint8_t c = uint8_t(str[i]);
+
+		buildChar(c, cXPos, cYPos);
+
+		cXPos += m_charWidthFloat[c];
+	}
+
+	t.draw(m_materials.ui_text);
+}
+
 void Font::onGraphicsReset()
 {
 	init(m_pOptions);
@@ -235,7 +285,7 @@ int Font::height(const std::string& str, int maxWidth)
 	return split(str, maxWidth).size() * 8;
 }
 
-int Font::width(const std::string& str)
+int Font::width(const std::string& str) const
 {
 	int maxLineWidth = 0, currentLineWidth = 0;
 
@@ -263,6 +313,55 @@ int Font::width(const std::string& str)
 		maxLineWidth = currentLineWidth;
 
 	return maxLineWidth;
+}
+
+std::string Font::getStringThatFitsInWidth(const std::string& str, int maxWidth, bool includeEllipsis, bool checkIfStringAlreadyFits) const
+{
+	if (maxWidth <= 0)
+	{
+		return "";
+	}
+
+	if (checkIfStringAlreadyFits)
+	{
+		if (width(str) <= maxWidth)
+			return str;
+	}
+
+	static std::string ellipsis = "...";
+
+	if (includeEllipsis)
+	{
+		maxWidth -= width(ellipsis);
+		if (maxWidth <= 0)
+			return "";
+	}
+
+	size_t bestSize = 0;
+	int32_t bestWidth = 0;
+
+	for (size_t i = 0; i < str.size(); ++i)
+	{
+		uint8_t c = static_cast<uint8_t>(str[i]);
+
+		assert(c != COLOR_START_CHAR && c != '\n'); // unsupported characters
+
+		int32_t newWidth = bestWidth + m_charWidthInt[static_cast<int32_t>(c)];
+		if (newWidth > maxWidth)
+			break;
+
+		++bestSize;
+		bestWidth = newWidth;
+	}
+
+	if (bestSize == 0)
+		return "";
+
+	std::string newStr = str.substr(0, bestSize);
+	if (includeEllipsis)
+		newStr += ellipsis;
+
+	return newStr;
 }
 
 std::vector<std::string> Font::split(const std::string& text, int maxWidth)

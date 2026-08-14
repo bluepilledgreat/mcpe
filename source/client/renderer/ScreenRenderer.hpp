@@ -1,6 +1,7 @@
 #pragma once
 
 #include "common/math/Color.hpp"
+#include "common/math/Rect2D.hpp"
 #include "client/gui/IntRectangle.hpp"
 #include "client/renderer/Font.hpp"
 #include "renderer/MaterialPtr.hpp"
@@ -33,9 +34,12 @@ public:
 
 protected:
 	void _blitBegin(const IntRectangle& rect);
+	void _blitBegin(const Rect2DI& rect);
 
 public:
 	void blit(const IntRectangle& rect);
+	void blit(const Rect2DI& rect);
+	void blit(const Rect2DI& rect, const Color& color);
 	void blit(mce::Mesh& mesh, const IntRectangle& rect);
 	void blit(int dstX, int dstY, int srcX, int srcY, int dstWidth, int dstHeight, int srcWidth, int srcHeight, mce::MaterialPtr* materialPtr = nullptr, const Color& color = Color::WHITE);
 	void blitTexture(Textures&, const std::string&, int x, int y, float u, float v, int width, int height, int uvWidth, int uvHeight, int textureWidth, int textureHeight, mce::MaterialPtr* materialPtr = nullptr);
@@ -49,6 +53,10 @@ public:
 	void blitNineSlice(Textures&, const std::string&, int x, int y, int width, int height, int border, mce::MaterialPtr* materialPtr = nullptr);
 	void drawCenteredString(Font& font, const std::string& str, int cx, int cy, const Color& color = Color::WHITE);
 	void drawString(Font& font, const std::string& str, int cx, int cy, const Color& color = Color::WHITE);
+	void drawStringNoShadows(Font& font, const std::string& str, int cx, int cy, const Color& color = Color::WHITE);
+	void drawScaledString(Font& font, const std::string& str, int cx, int cy, float scale, const Color& color = Color::WHITE);
+	void drawScaledStringNoShadows(Font& font, const std::string& str, int cx, int cy, float scale, const Color& color = Color::WHITE);
+	void fill(const Rect2DI& rect, const Color& color);
 	void fill(float left, float top, float right, float bottom, const Color& color);
 	void fill(int left, int top, int right, int bottom, const Color& color);
 	void fillGradient(float left, float top, float right, float bottom, const Color& colorUp, const Color& colorDown);

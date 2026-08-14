@@ -386,6 +386,8 @@ void NinecraftApp::reloadFancy(bool isFancy)
 
 void NinecraftApp::update()
 {
+	PROFILE_FUNCTION();
+
 	++m_fps;
 
 	Multitouch::commit();

@@ -18,6 +18,7 @@
 #include "renderer/ShaderConstants.hpp"
 #include "client/renderer/Lighting.hpp"
 #include "world/phys/HitResult.hpp"
+#include "common/profiler/Profiler.hpp"
 
 #ifdef _MSC_VER
 #pragma warning(disable : 4244)
@@ -165,6 +166,8 @@ void Gui::inventoryUpdated()
 
 void Gui::render(float f, bool bHaveScreen)
 {
+	PROFILE_FUNCTION();
+
 	Minecraft& mc = *m_pMinecraft;
 	GameRenderer& renderer = *mc.m_pGameRenderer;
 	Textures& textures = *mc.m_pTextures;

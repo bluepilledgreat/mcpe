@@ -19,6 +19,8 @@
 #include "renderer/RenderContextImmediate.hpp"
 #include "thirdparty/glm/glm.hpp"
 #include "world/level/TileSource.hpp"
+#include "common/profiler/Profiler.hpp"
+#include "client/gui/screens/ProfilerScreen.hpp"
 
 #define C_MENU_POINTER_WIDTH 16
 #define C_MENU_POINTER_HEIGHT 16
@@ -75,7 +77,8 @@ void GameRenderer::_init()
 }
 
 GameRenderer::GameRenderer(Minecraft* pMinecraft) :
-	m_pMinecraft(pMinecraft)
+	m_pMinecraft(pMinecraft),
+	m_profilerRenderer(pMinecraft)
 {
 	_init();
 	_initResources();
@@ -131,6 +134,8 @@ void GameRenderer::_clearFrameBuffer()
 
 void GameRenderer::_renderItemInHand(float f, int i)
 {
+	PROFILE_FUNCTION();
+
 #ifdef ENH_FOV_MODIFIER
 	MatrixStack::Ref projRef = MatrixStack::Projection.pushIdentity();
 	float fov = getFov(f, false);
@@ -184,6 +189,8 @@ void GameRenderer::_renderItemInHand(float f, int i)
 
 void GameRenderer::_renderDebugOverlay(float a)
 {
+	PROFILE_FUNCTION();
+
 	Font& font = *m_pMinecraft->m_pFont;
 
 	std::stringstream debugText;
@@ -300,6 +307,8 @@ void GameRenderer::unZoomRegion()
 
 void GameRenderer::setupCamera(float f, int i)
 {
+	PROFILE_FUNCTION();
+
 	m_renderDistance = float(256 >> (3 - m_pMinecraft->getOptions()->m_viewDistance.get()));
 
 	Matrix& projMtx = MatrixStack::Projection.getTop();
@@ -445,6 +454,8 @@ void GameRenderer::setupGuiScreen()
 
 void GameRenderer::bobHurt(Matrix& matrix, float f)
 {
+	PROFILE_FUNCTION();
+
 	Mob* pMob = m_pMinecraft->m_pCameraEntity;
 
 	if (pMob->m_health <= 0)
@@ -523,6 +534,8 @@ float GameRenderer::getFov(float f, bool applyFovMod)
 
 void GameRenderer::renderLevel(float f)
 {
+	PROFILE_FUNCTION();
+
 	if (!m_pLevel)
 		return;
 
@@ -594,6 +607,8 @@ void GameRenderer::renderLevel(float f)
 
 void GameRenderer::renderFramedItems(const Vec3& camPos, LevelRenderer& levelRenderer, const Entity& camera, float f, ParticleEngine& particleEngine, float i)
 {
+	PROFILE_FUNCTION();
+
 	if (m_pMinecraft->getOptions()->m_ambientOcclusion.get())
 	{
 		mce::RenderContext& renderContext = mce::RenderContextImmediate::get();
@@ -629,6 +644,8 @@ void GameRenderer::renderFramedItems(const Vec3& camPos, LevelRenderer& levelRen
 
 void GameRenderer::render(const Timer& timer)
 {
+	PROFILE_FUNCTION();
+
 	if (m_pMinecraft->m_pLocalPlayer && m_pMinecraft->m_bGrabbedMouse)
 	{
 		Minecraft *pMC = m_pMinecraft;
@@ -777,10 +794,22 @@ void GameRenderer::render(const Timer& timer)
 		m_shownChunkUpdates = Chunk::updates;
 		Chunk::updates = 0;
 	}
+
+	if (m_pMinecraft->m_profilerEnabled)
+	{
+		if (!dynamic_cast<ProfilerScreen*>(m_pMinecraft->m_pScreen)) // ProfilerScreen temporarily hijacks rendering of ProfilerRenderer
+		{
+			MenuPointer dummy(-1, -1, false);
+			m_profilerRenderer.step();
+			m_profilerRenderer.render(dummy);
+		}
+	}
 }
 
 void GameRenderer::tick()
 {
+	PROFILE_FUNCTION();
+
 	// Prevents underflow
 	if (m_keepPic > -100)
 		--m_keepPic;

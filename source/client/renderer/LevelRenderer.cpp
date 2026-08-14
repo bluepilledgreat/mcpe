@@ -16,6 +16,7 @@
 #include "renderer/ShaderConstants.hpp"
 #include "renderer/RenderContextImmediate.hpp"
 #include "world/level/TileSource.hpp"
+#include "common/profiler/Profiler.hpp"
 
 #if MCE_GFX_API_OGL
 #include "thirdparty/GL/GL.hpp"
@@ -423,6 +424,8 @@ void LevelRenderer::_recreateTessellators()
 
 void LevelRenderer::_setupFog(const Entity& camera, int i)
 {
+	PROFILE_FUNCTION();
+
 #ifdef FEATURE_GFX_SHADERS
 	if (i != 1)
 		return;
@@ -491,6 +494,8 @@ void LevelRenderer::_updateViewArea(const Entity& camera)
 
 void LevelRenderer::_startFrame(FrustumCuller& culler, float renderDistance, float f)
 {
+	PROFILE_FUNCTION();
+
 	const Entity& camera = *m_pMinecraft->m_pCameraEntity;
 	m_viewPos = camera.getInterpolatedPosition(f);
 
@@ -585,6 +590,8 @@ void LevelRenderer::deleteChunks()
 
 void LevelRenderer::cull(Culler* pCuller, float f)
 {
+	PROFILE_FUNCTION();
+
 	for (int i = 0; i < m_chunksLength; i++)
 	{
 		Chunk* pChunk = m_chunks[i];
@@ -901,6 +908,8 @@ int LevelRenderer::renderChunks(int start, int end, Tile::RenderLayer layer, flo
 
 void LevelRenderer::render(const Entity& camera, Tile::RenderLayer layer, float alpha, bool fog)
 {
+	PROFILE_FUNCTION();
+
 	for (int i = 0; i < 10; i++)
 	{
 		field_68 = (field_68 + 1) % m_chunksLength;
@@ -1140,6 +1149,8 @@ void LevelRenderer::setTilesDirty(const TilePos& min, const TilePos& max)
 
 void LevelRenderer::tick()
 {
+	PROFILE_FUNCTION();
+
 	const Entity* pCamera = m_pMinecraft->m_pCameraEntity;
 	if (!pCamera)
 		return;
@@ -1165,6 +1176,8 @@ typedef ChunkVector::iterator ChunkVectorIterator;
 
 bool LevelRenderer::updateDirtyChunks(const Entity& camera, bool force)
 {
+	PROFILE_FUNCTION();
+
 	constexpr int C_MAX = 3;
 	DirtyChunkSorter dcs(camera);
 	Chunk* pChunks[C_MAX] = { nullptr };
@@ -1274,6 +1287,8 @@ bool LevelRenderer::updateDirtyChunks(const Entity& camera, bool force)
 
 void LevelRenderer::renderCracks(const Entity& camera, const HitResult& hr, int mode, const ItemStack* inventoryItem, float a)
 {
+	PROFILE_FUNCTION();
+
 	TileSource& tileSource = camera.getTileSource();
 
 	// @BUG: possible leftover from Minecraft Classic? This is overridden anyways
@@ -1319,6 +1334,8 @@ void LevelRenderer::renderCracks(const Entity& camera, const HitResult& hr, int 
 
 void LevelRenderer::renderHitSelect(const Entity& camera, const HitResult& hr, int mode, const ItemStack* inventoryItem, float a)
 {
+	PROFILE_FUNCTION();
+
 	if (mode != 0) return;
 
 	TileSource& tileSource = camera.getTileSource();
@@ -1357,6 +1374,8 @@ void LevelRenderer::renderHitSelect(const Entity& camera, const HitResult& hr, i
 
 void LevelRenderer::renderHitOutline(const Entity& camera, const HitResult& hr, int mode, const ItemStack* inventoryItem, float a)
 {
+	PROFILE_FUNCTION();
+
 	if (mode != 0 || hr.m_hitType != 0)
 		return;
 
@@ -1549,6 +1568,8 @@ void LevelRenderer::playSound(const std::string& name, const Vec3& pos, float vo
 
 void LevelRenderer::renderLevel(const Entity& camera, FrustumCuller& culler, float renderDistance, float f)
 {
+	PROFILE_FUNCTION();
+
 	if (!m_pLevel)
 		return;
 
@@ -1631,6 +1652,8 @@ AABB _getEntityRenderBounds(const Mob& camera)
 
 void LevelRenderer::renderEntities(Vec3 pos, Culler* culler, float f)
 {
+	PROFILE_FUNCTION();
+
 	if (m_noEntityRenderFrames > 0)
 	{
 		m_noEntityRenderFrames--;
@@ -1724,6 +1747,8 @@ void LevelRenderer::renderShadow(const Entity& entity, const Vec3& pos, float r,
 
 void LevelRenderer::renderSky(const Entity& camera, float alpha)
 {
+	PROFILE_FUNCTION();
+
 	if (m_pDimension->isFoggy())
 		return;
 
@@ -1766,6 +1791,8 @@ void LevelRenderer::renderSky(const Entity& camera, float alpha)
 
 void LevelRenderer::prepareAndRenderClouds(const Entity& camera, float f)
 {
+	PROFILE_FUNCTION();
+
 	if (!m_pMinecraft->getOptions()->m_fancySky.get())
 		return;
 
@@ -1803,6 +1830,8 @@ void LevelRenderer::prepareAndRenderClouds(const Entity& camera, float f)
 
 void LevelRenderer::renderClouds(const Entity& camera, float alpha)
 {
+	PROFILE_FUNCTION();
+
 	if (!areCloudsAvailable())
 		return;
 
@@ -1876,6 +1905,8 @@ void LevelRenderer::renderClouds(const Entity& camera, float alpha)
 
 void LevelRenderer::renderAdvancedClouds(float alpha)
 {
+	PROFILE_FUNCTION();
+
 	Minecraft& mc = *m_pMinecraft;
 	Options& options = *mc.getOptions();
 	const Entity& camera = *mc.m_pCameraEntity;

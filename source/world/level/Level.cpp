@@ -20,6 +20,7 @@
 #include "world/level/levelgen/chunk/ChunkCache.hpp"
 #include "world/level/levelgen/biome/BiomeSource.hpp"
 #include "world/entity/MobSpawner.hpp"
+#include "common/profiler/Profiler.hpp"
 
 #include "Explosion.hpp"
 #include "Region.hpp"
@@ -384,6 +385,8 @@ bool Level::hasChunk(const ChunkPos& pos) const
 
 Entity::Vector Level::getEntities(Entity* pEntExclude, const AABB& aabb) const
 {
+	PROFILE_FUNCTION();
+
 	Entity::Vector entities;
 
 	long lowerXBound = floor((aabb.min.x - 2.0f) / 16);
@@ -1778,6 +1781,8 @@ int LASTTICKED = 0;
 
 void Level::tick()
 {
+	PROFILE_FUNCTION();
+
 	m_pMobSpawner->tick(*this, m_difficulty > 0, true);
 	m_pChunkSource->tick();
 
@@ -1795,6 +1800,8 @@ void Level::tick()
 
 void Level::tickEntities()
 {
+	PROFILE_FUNCTION();
+
 	// inlined in the original
 	removeAllPendingEntityRemovals();
 

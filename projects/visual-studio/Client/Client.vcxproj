@@ -291,6 +291,9 @@
     <ClInclude Include="$(MC_ROOT)\source\client\gui\screens\JoinGameScreen_Console.hpp" />
     <ClInclude Include="$(MC_ROOT)\source\client\gui\screens\LoadWorldScreen_Console.hpp" />
     <ClInclude Include="$(MC_ROOT)\source\client\gui\screens\SavingWorldScreen_Console.hpp" />
+    <ClInclude Include="$(MC_ROOT)\source\client\gui\ScreenList.h" />
+    <ClInclude Include="$(MC_ROOT)\source\client\gui\screens\ProfilerScreen.hpp" />
+    <ClInclude Include="$(MC_ROOT)\source\client\renderer\ProfilerRenderer.hpp" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="$(MC_ROOT)\source\client\app\App.cpp" />
@@ -500,6 +503,9 @@
     <ClCompile Include="$(MC_ROOT)\source\client\gui\screens\JoinGameScreen_Console.cpp" />
     <ClCompile Include="$(MC_ROOT)\source\client\gui\screens\LoadWorldScreen_Console.cpp" />
     <ClCompile Include="$(MC_ROOT)\source\client\gui\screens\SavingWorldScreen_Console.cpp" />
+    <ClCompile Include="$(MC_ROOT)\source\client\gui\ScreenList.cpp" />
+    <ClCompile Include="$(MC_ROOT)\source\client\gui\screens\ProfilerScreen.cpp" />
+    <ClCompile Include="$(MC_ROOT)\source\client\renderer\ProfilerRenderer.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Common\Common.vcxproj">

@@ -12,6 +12,7 @@
 #include "client/gui/MenuPointer.hpp"
 #include "renderer/MatrixStack.hpp"
 #include "renderer/hal/interface/DepthStencilState.hpp"
+#include "client/renderer/ProfilerRenderer.hpp"
 
 class Minecraft;
 class Timer;
@@ -25,7 +26,7 @@ class GameRenderer
 private:
 	void _init();
 public:
-	GameRenderer() { _init(); }
+	//GameRenderer() { _init(); }
 	GameRenderer(Minecraft*);
 	~GameRenderer();
 
@@ -66,6 +67,11 @@ public:
 
 	float getFov(float f, bool applyFovMod = true);
 	void setFovBase(float fov);
+
+	ProfilerRenderer& getProfilerRenderer()
+	{
+		return m_profilerRenderer;
+	}
 
 protected:
 	float field_14;
@@ -117,5 +123,7 @@ public:
 	float m_fovMod;
 	float m_fovModTarget;
 #endif
+
+	ProfilerRenderer m_profilerRenderer;
 };
 

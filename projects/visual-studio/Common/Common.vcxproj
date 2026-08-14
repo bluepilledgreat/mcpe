@@ -97,6 +97,7 @@
     <ClCompile Include="$(MC_ROOT)\source\common\utility\Singleton.cpp" />
     <ClCompile Include="$(MC_ROOT)\source\common\threading\AsyncTask.cpp" />
     <ClCompile Include="$(MC_ROOT)\source\common\utility\ByteBuffer.cpp" />
+    <ClCompile Include="$(MC_ROOT)\source\common\profiler\Profiler.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="$(MC_ROOT)\source\common\threading\CThread.hpp" />
@@ -126,6 +127,13 @@
     <ClInclude Include="$(MC_ROOT)\source\common\threading\Mutex.hpp" />
     <ClInclude Include="$(MC_ROOT)\source\common\threading\Mutex_win32.hpp" />
     <ClInclude Include="$(MC_ROOT)\source\common\threading\MutexGuards.hpp" />
+    <ClInclude Include="$(MC_ROOT)\source\common\math\Extents.hpp" />
+    <ClInclude Include="$(MC_ROOT)\source\common\math\Rect2D.hpp" />
+    <ClInclude Include="$(MC_ROOT)\source\common\math\UDim.hpp" />
+    <ClInclude Include="$(MC_ROOT)\source\common\math\UDim2.hpp" />
+    <ClInclude Include="$(MC_ROOT)\source\common\math\Vector2.hpp" />
+    <ClInclude Include="$(MC_ROOT)\source\common\math\Vector3.hpp" />
+    <ClInclude Include="$(MC_ROOT)\source\common\profiler\Profiler.hpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

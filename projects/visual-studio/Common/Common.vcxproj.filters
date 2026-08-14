@@ -27,6 +27,9 @@
     <Filter Include="Source Files\Threading">
       <UniqueIdentifier>{98eb3faf-163b-46e7-a605-a52084709e4f}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Header Files\Profiler">
+      <UniqueIdentifier>{b5ecf3a6-99cf-4655-bbc4-e4da5a7ed2f1}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="$(MC_ROOT)\source\common\Logger.cpp">
@@ -73,6 +76,9 @@
     </ClCompile>
     <ClCompile Include="$(MC_ROOT)\source\common\utility\ByteBuffer.cpp">
       <Filter>Source Files\Utility</Filter>
+    </ClCompile>
+    <ClCompile Include="$(MC_ROOT)\source\common\profiler\Profiler.cpp">
+      <Filter>Header Files\Profiler</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -156,6 +162,27 @@
     </ClInclude>
     <ClInclude Include="$(MC_ROOT)\source\common\threading\MutexGuards.hpp">
       <Filter>Header Files\Threading</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MC_ROOT)\source\common\profiler\Profiler.hpp">
+      <Filter>Header Files\Profiler</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MC_ROOT)\source\common\math\Vector3.hpp">
+      <Filter>Header Files\Math</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MC_ROOT)\source\common\math\Extents.hpp">
+      <Filter>Header Files\Math</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MC_ROOT)\source\common\math\Rect2D.hpp">
+      <Filter>Header Files\Math</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MC_ROOT)\source\common\math\Vector2.hpp">
+      <Filter>Header Files\Math</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MC_ROOT)\source\common\math\UDim.hpp">
+      <Filter>Header Files\Math</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MC_ROOT)\source\common\math\UDim2.hpp">
+      <Filter>Header Files\Math</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

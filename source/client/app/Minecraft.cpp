@@ -46,6 +46,9 @@
 #include "renderer/RenderContextImmediate.hpp"
 #include "client/renderer/LogoRenderer.hpp"
 
+#include "common/profiler/Profiler.hpp"
+#include "client/gui/screens/ProfilerScreen.hpp"
+
 Minecraft* Minecraft::_singletonPtr;
 float Minecraft::_renderScaleMultiplier = 1.0f;
 
@@ -117,6 +120,7 @@ Minecraft::Minecraft()
 	m_fLastUpdated = 0;
 	m_fDeltaTime = 0;
 	m_lastInteractTime = 0;
+	m_profilerEnabled = false;
 
 	_singletonPtr = this;
 }
@@ -732,6 +736,20 @@ void Minecraft::tickInput()
 	{
 		getOptions()->m_debugText.toggle();
 	}
+
+	while (getOptions()->getInputMapping(AID_TOGGLEPROFILER).consume())
+	{
+		m_profilerEnabled = !m_profilerEnabled;
+		if (!m_profilerEnabled && dynamic_cast<ProfilerScreen*>(m_pScreen))
+			handleBack(false);
+	}
+
+	while (getOptions()->getInputMapping(AID_TOGGLEPROFILERMODE).consume())
+	{
+		if (m_profilerEnabled)
+			setScreen(new ProfilerScreen);
+	}
+
 #ifdef ENH_ALLOW_AO_TOGGLE
 	while (getOptions()->getInputMapping(AID_TOGGLEAO).consume())
 	{
@@ -944,6 +962,8 @@ std::string Minecraft::getVersionString(const std::string& str) const
 
 void Minecraft::tick()
 {
+	PROFILE_FUNCTION();
+
 	if (m_bPendingResize)
 	{
 		m_bPendingResize = false;
@@ -1025,6 +1045,8 @@ void Minecraft::tick()
 
 void Minecraft::update()
 {
+	PROFILE_FUNCTION();
+
 	m_timer.advanceTime(isGamePaused() && m_pLevel);
 
 	platform()->tick();

@@ -14,6 +14,7 @@
 #include "renderer/ShaderConstants.hpp"
 #include "world/level/TileSource.hpp"
 #include "Lighting.hpp"
+#include "common/profiler/Profiler.hpp"
 
 ItemStack ItemInHandRenderer::stick;
 
@@ -51,6 +52,8 @@ void ItemInHandRenderer::itemUsed()
 
 void ItemInHandRenderer::render(float a)
 {
+    PROFILE_FUNCTION();
+
 	LocalPlayer& player = *m_pMinecraft->m_pLocalPlayer;
     TileSource& tileSource = player.getTileSource();
 

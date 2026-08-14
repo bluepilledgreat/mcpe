@@ -17,6 +17,9 @@
 
 class Font
 {
+public:
+	static const int LINE_HEIGHT = 8;
+
 protected:
 	class Materials
 	{
@@ -34,6 +37,7 @@ public:
 	void draw(const std::string&, int x, int y, const Color& color);
 	void draw(const std::string&, int x, int y, const Color& color, bool bShadow);
 	void drawSlow(const std::string&, int x, int y, const Color& color, bool bShadow);
+	void drawSlowV2(const std::string&, int x, int y, const Color& color, bool bShadow);
 	void drawShadow(const std::string&, int x, int y, const Color& color);
 	void drawScalable(const std::string&, int x, int y, const Color& color, float scale = 2.0f, bool shadow = false);
 	void drawScalableShadow(const std::string&, int x, int y, const Color& color, float scale = 2.0f);
@@ -44,9 +48,15 @@ public:
 
 	void onGraphicsReset();
 
-	int width(const std::string& str);
+	int width(const std::string& str) const;
+	std::string getStringThatFitsInWidth(const std::string& str, int maxWidth, bool includeEllipsis = true, bool checkIfStringAlreadyFits = false) const;
 	std::vector<std::string> split(const std::string& str, int width);
 	int height(const std::string& str, int maxWidth);
+
+	const mce::MaterialPtr& getTextMaterial() const
+	{
+		return m_materials.ui_text;
+	}
 
 private:
 	int field_0; 

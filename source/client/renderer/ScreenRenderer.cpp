@@ -4,6 +4,7 @@
 #include "renderer/ShaderConstants.hpp"
 #include "client/renderer/renderer/Tesselator.hpp"
 #include "client/resources/Resource.hpp"
+#include "common/profiler/Profiler.hpp"
 
 #ifdef _MSC_VER
 #pragma warning (disable : 4244)
@@ -67,11 +68,41 @@ void ScreenRenderer::_blitBegin(const IntRectangle& rect)
     t.vertexUV(rect.x,          rect.y,          0.0f, 0.0f, 0.0f);
 }
 
+void ScreenRenderer::_blitBegin(const Rect2DI& rect)
+{
+    Tesselator& t = Tesselator::instance;
+    t.begin(4);
+    t.vertexUV(rect.x0(), rect.y1(), 0.0f, 0.0f, 1.0f);
+    t.vertexUV(rect.x1(), rect.y1(), 0.0f, 1.0f, 1.0f);
+    t.vertexUV(rect.x1(), rect.y0(), 0.0f, 1.0f, 0.0f);
+    t.vertexUV(rect.x0(), rect.y0(), 0.0f, 0.0f, 0.0f);
+}
+
 void ScreenRenderer::blit(const IntRectangle& rect)
 {
     _blitBegin(rect);
     Tesselator& t = Tesselator::instance;
     t.draw(m_materials.ui_textured);
+}
+
+void ScreenRenderer::blit(const Rect2DI& rect)
+{
+    _blitBegin(rect);
+    Tesselator& t = Tesselator::instance;
+    t.draw(m_materials.ui_textured);
+}
+
+void ScreenRenderer::blit(const Rect2DI& rect, const Color& color = Color::WHITE)
+{
+    Tesselator& t = Tesselator::instance;
+    t.begin(4);
+    if (color != Color::WHITE)
+        t.color(color);
+    t.vertexUV(rect.x0(), rect.y1(), 0.0f, 0.0f, 1.0f);
+    t.vertexUV(rect.x1(), rect.y1(), 0.0f, 1.0f, 1.0f);
+    t.vertexUV(rect.x1(), rect.y0(), 0.0f, 1.0f, 0.0f);
+    t.vertexUV(rect.x0(), rect.y0(), 0.0f, 0.0f, 0.0f);
+    t.draw(color == Color::WHITE ? m_materials.ui_textured : m_materials.ui_texture_and_color);
 }
 
 void ScreenRenderer::blit(mce::Mesh& mesh, const IntRectangle& rect)
@@ -231,6 +262,38 @@ void ScreenRenderer::drawCenteredString(Font& font, const std::string& str, int 
 void ScreenRenderer::drawString(Font& font, const std::string& str, int cx, int cy, const Color& color)
 {
     font.drawShadow(str, cx, cy, color);
+}
+
+void ScreenRenderer::drawStringNoShadows(Font& font, const std::string& str, int cx, int cy, const Color& color)
+{
+    font.draw(str, cx, cy, color);
+}
+
+void ScreenRenderer::drawScaledString(Font& font, const std::string& str, int cx, int cy, float scale, const Color& color)
+{
+    font.drawScalableShadow(str, cx, cy, color, scale);
+}
+
+void ScreenRenderer::drawScaledStringNoShadows(Font& font, const std::string& str, int cx, int cy, float scale, const Color& color)
+{
+    font.drawScalable(str, cx, cy, color, scale);
+}
+
+void ScreenRenderer::fill(const Rect2DI& rect, const Color& color)
+{
+    PROFILE_FUNCTION();
+
+    currentShaderColor = color;
+
+    Tesselator& t = Tesselator::instance;
+    t.begin(4);
+
+    t.vertex(rect.x0(), rect.y1(), 0.0f);
+    t.vertex(rect.x1(), rect.y1(), 0.0f);
+    t.vertex(rect.x1(), rect.y0(), 0.0f);
+    t.vertex(rect.x0(), rect.y0(), 0.0f);
+
+    t.draw(m_materials.ui_fill_color);
 }
 
 void ScreenRenderer::fill(float left, float top, float right, float bottom, const Color& color)
