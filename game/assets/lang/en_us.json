@@ -87,6 +87,7 @@
     "options.flightHax": "Flight Hax",
     "options.serverVisibleDefault": "Local Server Multiplayer",
     "options.debugText": "Debug Text",
+    "options.debugProfiler": "Debug Profiler",
     "options.2dTitleLogo": "2D Title Logo",
     "options.menuPanorama": "Menu Panorama",
     "options.fov": "FOV",

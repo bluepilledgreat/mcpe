@@ -184,5 +184,11 @@
     <ClInclude Include="$(MC_ROOT)\source\common\math\UDim2.hpp">
       <Filter>Header Files\Math</Filter>
     </ClInclude>
+    <ClInclude Include="$(MC_ROOT)\source\common\threading\Semaphore.hpp">
+      <Filter>Header Files\Threading</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MC_ROOT)\source\common\threading\SharedMutex.hpp">
+      <Filter>Header Files\Threading</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

@@ -16,7 +16,6 @@
 #include "renderer/ShaderConstants.hpp"
 #include "renderer/RenderContextImmediate.hpp"
 #include "world/level/TileSource.hpp"
-#include "common/profiler/Profiler.hpp"
 
 #if MCE_GFX_API_OGL
 #include "thirdparty/GL/GL.hpp"
@@ -273,7 +272,23 @@ void LevelRenderer::_buildStarsMesh()
 
 void LevelRenderer::_buildSunAndMoonMeshes()
 {
+	Tesselator& t = Tesselator::instance;
 
+	constexpr float ss1 = 30.0f;
+	t.begin(4);
+	t.vertexUV(-ss1, 100.0f, -ss1, 0.0f, 0.0f);
+	t.vertexUV( ss1, 100.0f, -ss1, 1.0f, 0.0f);
+	t.vertexUV( ss1, 100.0f,  ss1, 1.0f, 1.0f);
+	t.vertexUV(-ss1, 100.0f,  ss1, 0.0f, 1.0f);
+	m_sunMesh = t.end();
+
+	constexpr float ss2 = 20.0f;
+	t.begin(4);
+	t.vertexUV(-ss2, -100.0f,  ss2, 1.0f, 1.0f);
+	t.vertexUV( ss2, -100.0f,  ss2, 0.0f, 1.0f);
+	t.vertexUV( ss2, -100.0f, -ss2, 0.0f, 0.0f);
+	t.vertexUV(-ss2, -100.0f, -ss2, 1.0f, 0.0f);
+	m_moonMesh = t.end();
 }
 
 void LevelRenderer::_buildShadowVolume()
@@ -352,32 +367,17 @@ void LevelRenderer::_renderSunAndMoon(float alpha)
 
 	Vec3 p = Vec3::ZERO;
 
-	currentShaderColor = Color::WHITE;
-	currentShaderDarkColor = Color::WHITE;
-
 	matrix.translate(p);
 	matrix.rotate(0.0f, Vec3::UNIT_Z);
 	matrix.rotate(dimension.getTimeOfDay(alpha) * 360.0f, Vec3::UNIT_X);
 
 	if (arePlanetsAvailable())
 	{
-		float ss = 30.0f;
 		m_pTextures->loadAndBindTexture("terrain/sun.png");
-		t.begin(4);
-		t.vertexUV(-ss, 100.0f, -ss, 0.0f, 0.0f);
-		t.vertexUV( ss, 100.0f, -ss, 1.0f, 0.0f);
-		t.vertexUV( ss, 100.0f,  ss, 1.0f, 1.0f);
-		t.vertexUV(-ss, 100.0f,  ss, 0.0f, 1.0f);
-		t.draw(m_materials.sun_moon);
+		m_sunMesh.render(m_materials.sun_moon);
 
-		ss = 20.0f;
 		m_pTextures->loadAndBindTexture("terrain/moon.png");
-		t.begin(4);
-		t.vertexUV(-ss, -100.0f,  ss, 1.0f, 1.0f);
-		t.vertexUV( ss, -100.0f,  ss, 0.0f, 1.0f);
-		t.vertexUV( ss, -100.0f, -ss, 0.0f, 0.0f);
-		t.vertexUV(-ss, -100.0f, -ss, 1.0f, 0.0f);
-		t.draw(m_materials.sun_moon);
+		m_moonMesh.render(m_materials.sun_moon);
 	}
 }
 
@@ -559,10 +559,12 @@ void LevelRenderer::onAppSuspended()
 	
 	//m_shadowVolumeMesh.reset();
 	//m_shadowOverlayMesh.reset();
-	m_starsMesh.reset();
-	m_cloudsMesh.reset();
 	m_skyMesh.reset();
+	m_cloudsMesh.reset();
 	m_starsMesh.reset();
+	m_darkMesh.reset();
+	m_sunMesh.reset();
+	m_moonMesh.reset();
 }
 
 void LevelRenderer::deleteChunks()
@@ -1857,8 +1859,8 @@ void LevelRenderer::renderClouds(const Entity& camera, float alpha)
 
 	m_pTextures->loadAndBindTexture("environment/clouds.png");
 
-	Color cloudColor = dimension.getCloudColor(alpha);
-	cloudColor.a = 0.8f;
+	currentShaderColor = dimension.getCloudColor(alpha);
+	currentShaderColor.a = 0.8f;
 
 	float offX = Mth::Lerp(camera.m_oPos.x, camera.m_pos.x, alpha) + (float(m_ticksSinceStart) + alpha) * 0.03f;
 	float offZ = Mth::Lerp(camera.m_oPos.z, camera.m_pos.z, alpha);
@@ -1875,7 +1877,6 @@ void LevelRenderer::renderClouds(const Entity& camera, float alpha)
 	offX /= 2048.0f;
 	offZ /= 2048.0f;
 	t.begin(1024);
-	t.color(cloudColor);
 
 	constexpr int incr = 16 * 2;
 	constexpr int maxX = C_MAX_CHUNKS_X * 16;
@@ -1892,7 +1893,7 @@ void LevelRenderer::renderClouds(const Entity& camera, float alpha)
 
 	}
 
-	t.voidBeginAndEndCalls(false); // why??
+	//t.voidBeginAndEndCalls(false); // why??
 	t.draw(m_materials.clouds);
 
 	if (yy > 1.0f)
@@ -1939,6 +1940,9 @@ void LevelRenderer::renderAdvancedClouds(float alpha)
 	}
 
 	m_pTextures->loadAndBindTexture("environment/clouds.png");
+
+	currentShaderColor = Color::WHITE;
+	currentShaderDarkColor = Color::WHITE;
 
 	Color cc = dimension.getCloudColor(alpha);
     float uo;
@@ -2003,6 +2007,7 @@ void LevelRenderer::renderAdvancedClouds(float alpha)
 				if (yy > -h - 1.0f)
 				{
 					t.color(cc.r * 0.7f, cc.g * 0.7f, cc.b * 0.7f, 0.8f);
+					t.normal(Vec3::NEG_UNIT_Y);
 					t.vertexUV((xp + 0.0f), (yy + 0.0f), (zp + D), ((xx + 0.0f) * scale + uo), ((zz + D) * scale + vo));
 					t.vertexUV((xp + D), (yy + 0.0f), (zp + D), ((xx + D) * scale + uo), ((zz + D) * scale + vo));
 					t.vertexUV((xp + D), (yy + 0.0f), (zp + 0.0f), ((xx + D) * scale + uo), ((zz + 0.0f) * scale + vo));

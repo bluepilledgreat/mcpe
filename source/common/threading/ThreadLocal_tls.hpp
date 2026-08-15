@@ -1,5 +1,11 @@
 #pragma once
+
+#ifdef _XBOX
+#include <xtl.h>
+#else
+#define WIN32_LEAN_AND_MEAN
 #include <windows.h>
+#endif
 #include <cassert>
 #include <stdexcept>
 #include <vector>

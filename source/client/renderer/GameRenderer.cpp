@@ -795,7 +795,7 @@ void GameRenderer::render(const Timer& timer)
 		Chunk::updates = 0;
 	}
 
-	if (m_pMinecraft->m_profilerEnabled)
+	if (m_pMinecraft->getOptions()->m_debugProfiler.get())
 	{
 		if (!dynamic_cast<ProfilerScreen*>(m_pMinecraft->m_pScreen)) // ProfilerScreen temporarily hijacks rendering of ProfilerRenderer
 		{

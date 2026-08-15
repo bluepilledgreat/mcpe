@@ -120,7 +120,6 @@ Minecraft::Minecraft()
 	m_fLastUpdated = 0;
 	m_fDeltaTime = 0;
 	m_lastInteractTime = 0;
-	m_profilerEnabled = false;
 
 	_singletonPtr = this;
 }
@@ -739,14 +738,12 @@ void Minecraft::tickInput()
 
 	while (getOptions()->getInputMapping(AID_TOGGLEPROFILER).consume())
 	{
-		m_profilerEnabled = !m_profilerEnabled;
-		if (!m_profilerEnabled && dynamic_cast<ProfilerScreen*>(m_pScreen))
-			handleBack(false);
+		getOptions()->m_debugProfiler.toggle();
 	}
 
 	while (getOptions()->getInputMapping(AID_TOGGLEPROFILERMODE).consume())
 	{
-		if (m_profilerEnabled)
+		if (getOptions()->m_debugProfiler.get() && !m_pScreen)
 			setScreen(new ProfilerScreen);
 	}
 

@@ -1,10 +1,8 @@
 #include "client/app/Minecraft.hpp"
 #include "client/renderer/ProfilerRenderer.hpp"
-#include "common/math/Extents.hpp"
 #include "common/Mth.hpp"
 #include "client/gui/GuiElement.hpp"
 #include "common/math/Color.hpp"
-#include "common/math/UDim2.hpp"
 #include "renderer/ShaderConstants.hpp"
 
 //#define PROFILE_OURSELVES
@@ -84,10 +82,10 @@ class ProfilerFlameGraphRow
 {
 private:
 	// Border on all sides
-	const int BORDER_SIZE = 1;
+	static const int BORDER_SIZE = 1;
 
 	// Padding on all sides
-	const int PADDING = 1;
+	static const int PADDING = 1;
 
 public:
 	static const Color BORDER_COLOUR;

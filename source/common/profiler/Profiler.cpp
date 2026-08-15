@@ -214,26 +214,26 @@ ProfilerMarker::ProfilerMarker(const char* markerName)
 
 ProfilerMarker::~ProfilerMarker()
 {
-	if (m_context)
+	if (!m_context)
+		return;
+
+	double endTime = getTimeS();
+	double timeElapsed = endTime - m_startTime;
+
+	m_context->stopProfiling(endTime, timeElapsed);
+	m_context->m_currentMarker = nullptr;
+
+	m_rootContext.popFromContextStack();
+
+	double endTimeAfterWork = getTimeS();
+
+	double timeForStartWork = m_startTime - m_startTimeBeforeWork;
+	double timeForEndWork = endTimeAfterWork - endTime;
+
+	// negate from final result of the parent context
+	ProfilerContext* parentContext = m_rootContext.peekFromContextStack();
+	if (parentContext->m_currentMarker) // roots dont ever have markers
 	{
-		double endTime = getTimeS();
-		double timeElapsed = endTime - m_startTime;
-
-		m_context->stopProfiling(endTime, timeElapsed);
-		m_context->m_currentMarker = nullptr;
-
-		m_rootContext.popFromContextStack();
-
-		double endTimeAfterWork = getTimeS();
-
-		double timeForStartWork = m_startTime - m_startTimeBeforeWork;
-		double timeForEndWork = endTimeAfterWork - endTime;
-
-		// negate from final result of the parent context
-		ProfilerContext* parentContext = m_rootContext.peekFromContextStack();
-		if (parentContext->m_currentMarker) // roots dont ever have markers
-		{
-			parentContext->m_currentMarker->m_startTime += timeForStartWork + timeForEndWork;
-		}
+		parentContext->m_currentMarker->m_startTime += timeForStartWork + timeForEndWork;
 	}
 }

@@ -366,6 +366,7 @@ class FancyGraphicsOption : public GraphicsOption
 public:
 	FancyGraphicsOption(const std::string& key, const std::string& name, bool initial = true) : GraphicsOption(key, name, initial) {}
 
+	void apply() override;
 	std::string getMessage() const override;
 };
 
@@ -558,6 +559,7 @@ public:
 	BoolOption m_serverVisibleDefault;
 	BoolOption m_autoJump;
 	BoolOption m_debugText;
+	BoolOption m_debugProfiler;
 	BoolOption m_blockOutlines;
 	GraphicsOption m_fancyGrass;
 	GraphicsOption m_biomeColors;
@@ -639,5 +641,6 @@ public:
 	HEADER("Experimental");                \
 		OPTION(m_hideGui);                 \
 		OPTION(m_debugText);               \
+		OPTION(m_debugProfiler);           \
 		OPTION(m_menuPanorama); int idxPano = currentIndex; \
 

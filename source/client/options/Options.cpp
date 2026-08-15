@@ -87,6 +87,7 @@ Options::Options(Minecraft* mc, const std::string& folderPath) :
 	, m_serverVisibleDefault("mp_server_visible_default", "options.serverVisibleDefault", true)
 	, m_autoJump("ctrl_autojump", "options.autoJump", AppPlatform::singleton()->isTouchscreen())
 	, m_debugText("info_debugtext", "options.debugText", false)
+	, m_debugProfiler("info_debugprofiler", "options.debugProfiler", false)
 	, m_blockOutlines("gfx_blockoutlines", "options.blockOutlines", !AppPlatform::singleton()->isTouchscreen())
 	, m_fancyGrass("gfx_fancygrass", "options.fancyGrass", true)
 	, m_biomeColors("gfx_biomecolors", "options.biomeColors", true)
@@ -144,6 +145,7 @@ Options::Options(Minecraft* mc, const std::string& folderPath) :
 	add(OC_VIDEO, m_animatedCharacter);
 	add(OC_VIDEO, m_hideGui);
 	add(OC_VIDEO, m_debugText);
+	add(OC_VIDEO, m_debugProfiler);
 	add(OC_VIDEO, m_menuPanorama);
 
 	add(m_playerName);
@@ -624,6 +626,8 @@ void Options::loadControls()
 	BTN(AID_CONTAINER_QUICKMOVE, GameController::BUTTON_Y);
 	BTN(AID_CONTAINER_SPLIT,	 GameController::BUTTON_X);
 	BTN(AID_TOGGLE3RD,			 GameController::BUTTON_LEFTSTICK);
+	BTN(AID_TOGGLEPROFILERMODE,  GameController::BUTTON_DPAD_LEFT);
+	BTN(AID_PROFILERMODE_FREEZE, GameController::BUTTON_DPAD_RIGHT);
 	BTN(AID_SLOT_L,				 GameController::BUTTON_LEFTSHOULDER);
 	BTN(AID_SLOT_R,				 GameController::BUTTON_RIGHTSHOULDER);
 	BTN(AID_FLY_UP,				 GameController::BUTTON_A);
@@ -854,6 +858,11 @@ void GraphicsOption::apply()
 {
 	if (m_pMinecraft->m_pLevelRenderer)
 		m_pMinecraft->m_pLevelRenderer->allChanged();
+}
+
+void FancyGraphicsOption::apply()
+{
+	m_pMinecraft->reloadFancy(get());
 }
 
 std::string FancyGraphicsOption::getMessage() const
