@@ -199,9 +199,6 @@
     <ClInclude Include="..\..\..\source\common\threading\Semaphore_win32.hpp">
       <Filter>Header Files\Threading</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\source\common\threading\Semaphore_pthreads.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\..\source\common\threading\Semaphore_base.hpp">
       <Filter>Header Files\Threading</Filter>
     </ClInclude>

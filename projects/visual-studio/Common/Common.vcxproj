@@ -139,7 +139,6 @@
     <ClInclude Include="$(MC_ROOT)\source\common\threading\Semaphore.hpp" />
     <ClInclude Include="$(MC_ROOT)\source\common\threading\SharedMutex.hpp" />
     <ClInclude Include="..\..\..\source\common\threading\Semaphore_base.hpp" />
-    <ClInclude Include="..\..\..\source\common\threading\Semaphore_pthreads.hpp" />
     <ClInclude Include="..\..\..\source\common\threading\Semaphore_win32.hpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
