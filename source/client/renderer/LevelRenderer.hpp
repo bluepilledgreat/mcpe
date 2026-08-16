@@ -9,7 +9,6 @@
 #pragma once
 
 #include <algorithm>
-#include <sstream>
 #include "client/app/AppPlatformListener.hpp"
 #include "renderer/hal/interface/FogState.hpp"
 #include "world/level/LevelListener.hpp"
@@ -225,6 +224,8 @@ public:
 	mce::Mesh m_cloudsMesh;
 	mce::Mesh m_starsMesh;
 	mce::Mesh m_darkMesh;
+	mce::Mesh m_sunMesh;
+	mce::Mesh m_moonMesh;
 	//...
 	Textures* m_pTextures;
 	TileEntity::Vector m_renderableTileEntities;

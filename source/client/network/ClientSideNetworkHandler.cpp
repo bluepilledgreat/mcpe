@@ -392,9 +392,9 @@ void ClientSideNetworkHandler::handle(const RakNet::RakNetGUID& rakGuid, MovePla
 void ClientSideNetworkHandler::handle(const RakNet::RakNetGUID& rakGuid, PlaceBlockPacket* pPlaceBlockPkt)
 {
 	puts_ignorable("PlaceBlockPacket");
-
+	
 	if (!m_pLevel) return;
-
+	
 	Player* pPlayer = (Player*)m_pLevel->getEntity(pPlaceBlockPkt->m_entityId);
 	if (!pPlayer)
 	{
@@ -415,13 +415,10 @@ void ClientSideNetworkHandler::handle(const RakNet::RakNetGUID& rakGuid, PlaceBl
 	TileID tileTypeId = pPlaceBlockPkt->m_tileTypeId;
 	Facing::Name face = (Facing::Name)pPlaceBlockPkt->m_face;
 
-	if (!tileSource.mayPlace(tileTypeId, pos, face, *pPlayer, true))
-		return;
-
 	Tile* pTile = Tile::tiles[tileTypeId];
-	if (!tileSource.setTile(pos, tileTypeId))
+	if (!tileSource.setTileAndData(pos, FullTile(tileTypeId, pPlaceBlockPkt->m_data)))
 		return;
-
+	
 	pTile->setPlacedOnFace(tileSource, pos, face);
 	pTile->setPlacedBy(pos, *pPlayer);
 
@@ -1063,6 +1060,6 @@ void ClientSideNetworkHandler::handleBlockUpdate(const BlockUpdate& u)
 {
 	Dimension& dimension = *m_pLevel->getDimension(DIMENSION_OVERWORLD);
 	TileSource& tileSource = *dimension.getTileSource();
-
-	tileSource.setTile(u.pos, Tile::TransformToValidBlockId(u.tile), u.data);
+	
+	tileSource.setTileAndData(u.pos, FullTile(Tile::TransformToValidBlockId(u.tile), u.data));
 }
