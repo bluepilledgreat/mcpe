@@ -1,4 +1,5 @@
 #pragma once
+
 #ifdef _XBOX
 #include <xtl.h>
 #else
