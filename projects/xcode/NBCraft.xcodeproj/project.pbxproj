@@ -303,6 +303,8 @@
 		84498A9C2AF18CDA005EF5A5 /* uncompr.c in Sources */ = {isa = PBXBuildFile; fileRef = 840DD8652AC810630006A435 /* uncompr.c */; };
 		84498A9D2AF18CDA005EF5A5 /* zutil.c in Sources */ = {isa = PBXBuildFile; fileRef = 840DD8682AC810630006A435 /* zutil.c */; };
 		84498AA02AF18D08005EF5A5 /* libZLib.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 84498A832AF18C7A005EF5A5 /* libZLib.a */; };
+		845A5D4A30319A6B003E7E1C /* Semaphore_base.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 845A5D4830319A6B003E7E1C /* Semaphore_base.hpp */; };
+		845A5D4B30319A6B003E7E1C /* Semaphore_pthreads.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 845A5D4930319A6B003E7E1C /* Semaphore_pthreads.hpp */; };
 		845A8D302FEBAB0900D26FD2 /* CraftContext.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 845A8D2E2FEBAB0800D26FD2 /* CraftContext.cpp */; };
 		845A8D312FEBAB0900D26FD2 /* CraftContext.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 845A8D2F2FEBAB0900D26FD2 /* CraftContext.hpp */; };
 		845A8D342FEBAB1C00D26FD2 /* CraftButton_Console.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 845A8D322FEBAB1C00D26FD2 /* CraftButton_Console.cpp */; };
@@ -2527,6 +2529,8 @@
 		8445E79E2D769329008DC834 /* SynchedEntityData.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = SynchedEntityData.cpp; sourceTree = "<group>"; };
 		8445E79F2D769329008DC834 /* SynchedEntityData.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = SynchedEntityData.hpp; sourceTree = "<group>"; };
 		84498A832AF18C7A005EF5A5 /* libZLib.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libZLib.a; sourceTree = BUILT_PRODUCTS_DIR; };
+		845A5D4830319A6B003E7E1C /* Semaphore_base.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = Semaphore_base.hpp; sourceTree = "<group>"; };
+		845A5D4930319A6B003E7E1C /* Semaphore_pthreads.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = Semaphore_pthreads.hpp; sourceTree = "<group>"; };
 		845A8D2E2FEBAB0800D26FD2 /* CraftContext.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = CraftContext.cpp; sourceTree = "<group>"; };
 		845A8D2F2FEBAB0900D26FD2 /* CraftContext.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = CraftContext.hpp; sourceTree = "<group>"; };
 		845A8D322FEBAB1C00D26FD2 /* CraftButton_Console.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = CraftButton_Console.cpp; sourceTree = "<group>"; };
@@ -5571,6 +5575,8 @@
 				84D4D01230318AF8002AC934 /* Mutex_pthread.hpp */,
 				84D4D01430318AF8002AC934 /* MutexGuards.hpp */,
 				84D4D01530318AF8002AC934 /* Semaphore.hpp */,
+				845A5D4830319A6B003E7E1C /* Semaphore_base.hpp */,
+				845A5D4930319A6B003E7E1C /* Semaphore_pthreads.hpp */,
 				84D4D01630318AF8002AC934 /* SharedMutex.hpp */,
 				84D4D01830318AF8002AC934 /* ThreadLocal.hpp */,
 				84D4D01730318AF8002AC934 /* ThreadLocal_pthread.hpp */,
@@ -6814,8 +6820,10 @@
 				8406FD392AF1823700B09C1D /* Timer.hpp in Headers */,
 				84F412B73031864100C2846A /* CThread_pthread.hpp in Headers */,
 				84D4D01F30318AF8002AC934 /* ThreadLocal.hpp in Headers */,
+				845A5D4B30319A6B003E7E1C /* Semaphore_pthreads.hpp in Headers */,
 				84D4D01D30318AF8002AC934 /* SharedMutex.hpp in Headers */,
 				84D4D01C30318AF8002AC934 /* Semaphore.hpp in Headers */,
+				845A5D4A30319A6B003E7E1C /* Semaphore_base.hpp in Headers */,
 				84E058FF2F383E9200F1E829 /* CThread.hpp in Headers */,
 				84D4D01A30318AF8002AC934 /* Mutex.hpp in Headers */,
 				84E058FD2F383E9200F1E829 /* AsyncTask.hpp in Headers */,
