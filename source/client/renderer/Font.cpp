@@ -10,83 +10,420 @@
 #include "client/renderer/renderer/RenderMaterialGroup.hpp"
 #include "renderer/ShaderConstants.hpp"
 #include "renderer/MatrixStack.hpp"
+#include "common/Util.hpp"
+#include "common/utility/hashing/HashCombine.hpp"
 #include <sstream>
+#include <utf8proc.h>
+
+constexpr int MAX_CACHE_SIZE = 500;
 
 constexpr char COLOR_START_CHAR = '\xa7';
 
-static constexpr float RENDER_XY_SIZE = 8.0f;
+constexpr uint8_t SPACE_WIDTH = 2;
+constexpr float NEW_LINE_SPACING = 2.0f; // spacing on the Y-axis created by new lines
+
+// character to use for characters not in our valid ranges
+constexpr int UNK_CHAR = 65533;
+
+template<>
+struct HashFunction<Color>
+{
+	size_t operator()(const Color& key) const
+	{
+		return key.toUInt32();
+	}
+};
+
+size_t HashFunction<FontCacheKey>::operator()(const FontCacheKey& key) const
+{
+	size_t hash = HashFunction<std::string>()(key.str);
+	hash_combine(hash, key.color);
+	return hash;
+}
 
 Font::Materials::Materials()
 {
 	MATERIAL_PTR(common, ui_text);
 }
 
-Font::Font(Options* pOpts, const std::string& fileName, Textures* pTexs) :
-	m_fileName(fileName), m_pOptions(pOpts), m_pTextures(pTexs)
+Font::GlyphQuad::GlyphQuad(int c, float x, float y, bool isAscii)
+	: c(c)
+	, x(x)
+	, y(y)
+	, isAscii(isAscii)
 {
-	field_0 = 0;
-
-	init(pOpts);
 }
 
-void Font::init(Options* pOpts)
+void Font::GlyphQuad::append(Tesselator& t)
 {
-	TextureData* pTexture = m_pTextures->getTextureData(m_fileName, true);
-	if (!pTexture) return;
+	const int mapGlyphSize = isAscii ? ASCII_MAP_GLYPH_SIZE : UNICODE_MAP_GLYPH_SIZE;
 
-	for (int i = 0; i < C_FONT_CHARS_AMOUNT; i++) // character number
+	const int u = (c % COMMON_MAP_DIMENSION) * mapGlyphSize;
+	const int v = (c / COMMON_MAP_DIMENSION) * mapGlyphSize;
+
+	const int mapSize = isAscii ? ASCII_MAP_PIXEL_DIMENSION : UNICODE_MAP_PIXEL_DIMENSION;
+	const float D = (1.0f / mapSize);
+
+	t.vertexUV(x,                     y + RENDER_GLYPH_SIZE, 0.0f, u * D,                  (v + mapGlyphSize) * D);
+	t.vertexUV(x + RENDER_GLYPH_SIZE, y + RENDER_GLYPH_SIZE, 0.0f, (u + mapGlyphSize) * D, (v + mapGlyphSize) * D);
+	t.vertexUV(x + RENDER_GLYPH_SIZE, y,                     0.0f, (u + mapGlyphSize) * D, v * D);
+	t.vertexUV(x,                     y,                     0.0f, u * D,                  v * D);
+}
+
+Font::TextObject::TextObject()
+{
+}
+
+Font::TextObject::~TextObject()
+{
+}
+
+void Font::TextObject::addPage(mce::Mesh& mesh, TextureData* textureData)
+{
+	assert(textureData);
+	pages.push_back(Page(mesh, textureData));
+}
+
+void Font::TextObject::render(const mce::MaterialPtr& material)
+{
+	for (std::vector<Page>::iterator it = pages.begin(); it != pages.end(); it++)
 	{
-		// note: the 'widthMax' behavior is assumed. It might not be like that exactly
-		int widthMax = 0;
-
-		if (i == 32) // space
-		{
-			widthMax = 2;
-			//if (m_pOptions->getUiTheme() == UI_CONSOLE) // @PARITY-LCE: TU2 has extra spacing between words in UI screens compared to Java.
-			//	widthMax = 4;
-		}
-		else
-		{
-			for (int j = 7; j >= 0; j--) // x position
-			{
-				int x = (i % 16), y = (i / 16);
-				int pixelDataIndex = pTexture->m_imageData.m_width * 8 * y + 8 * x + j;
-
-				for (int k = 0; k < 8; k++)
-				{
-					if ((uint8_t)pTexture->getData()[pixelDataIndex] != 0)
-					{
-						if (widthMax < j)
-							widthMax = j;
-					}
-
-					pixelDataIndex += pTexture->m_imageData.m_width;
-				}
-			}
-		}
-
-		m_charWidthInt[i] = widthMax + 2;
-		m_charWidthFloat[i] = float (widthMax) + 2;
+		Page& page = *it;
+		page.textureData->bind();
+		page.mesh.render(material);
 	}
 }
 
-void Font::buildChar(unsigned char chr, float x, float y)
+Font::TextObject::Page::Page(mce::Mesh& mesh, TextureData* textureData)
+	: mesh(mesh)
+	, textureData(textureData)
+{
+}
+
+Font::Font(Options* options, const std::string& fileName, Textures* textures)
+	: m_asciiFileName(fileName)
+	, m_options(options)
+	, m_textures(textures)
+	, m_cachingEnabled(true)
+{
+	m_recentTextObjectCaches.reserve(MAX_CACHE_SIZE);
+	_init(options);
+}
+
+void Font::_init(Options* pOpts)
+{
+	_computeAsciiSizes();
+	_readUnicodeSizes("assets/font/glyphs/glyph_sizes.bin");
+}
+
+void Font::_computeAsciiSizes()
+{
+	TextureData* defaultTexture = m_textures->getTextureData(m_asciiFileName, false);
+	if (!defaultTexture)
+		throw std::runtime_error("Missing ASCII font image");
+
+	if (defaultTexture->m_imageData.m_width != ASCII_MAP_PIXEL_DIMENSION && defaultTexture->m_imageData.m_height != ASCII_MAP_PIXEL_DIMENSION)
+		throw std::runtime_error("Bad ASCII font image: wrong dimensions");
+
+	for (int i = 0; i < NUM_ASCII_CHARS; ++i)
+	{
+		uint8_t c = static_cast<uint8_t>(i);
+		uint8_t widthMax = 0;
+
+		if (c == ' ')
+		{
+			widthMax = SPACE_WIDTH;
+		}
+		else
+		{
+			int x = c % COMMON_MAP_DIMENSION;
+			int y = c / COMMON_MAP_DIMENSION;
+
+			int pixelDataIndexBase = (ASCII_MAP_GLYPH_SIZE * x) + (ASCII_MAP_PIXEL_DIMENSION * ASCII_MAP_GLYPH_SIZE * y);
+
+			for (int xOffset = ASCII_MAP_GLYPH_SIZE - 1; xOffset >= 0; --xOffset)
+			{
+				for (int yOffset = 0; yOffset < ASCII_MAP_GLYPH_SIZE; ++yOffset)
+				{
+					uint32_t pixelData = defaultTexture->getData()[pixelDataIndexBase + xOffset + (ASCII_MAP_PIXEL_DIMENSION * yOffset)];
+					if (static_cast<uint8_t>(pixelData) != 0) // check for channel data
+					{
+						widthMax = xOffset;
+						goto done;
+					}
+				}
+			}
+
+		done:
+			;
+		}
+
+		m_asciiCharWidth[c] = widthMax + 2;
+	}
+}
+
+void Font::_readUnicodeSizes(const std::string& filePath)
+{
+	memset(m_unicodeCharWidth, 0, sizeof(m_unicodeCharWidth));
+
+	std::string fileData = AppPlatform::singleton()->readAssetFileStr(filePath, false);
+
+	if (fileData.size() != NUM_GLYPHS)
+		throw std::runtime_error("Bad glyph sizes file");
+
+	for (int i = 0; i < NUM_GLYPHS; ++i)
+	{
+		// these widths are for font size 16
+		// we render at font size 8
+		// +1 is for better spacing between characters
+		m_unicodeCharWidth[i] = static_cast<uint8_t>(fileData[i] / (COMMON_MAP_DIMENSION / RENDER_GLYPH_SIZE)) + 1;
+	}
+}
+
+TextureData* Font::_getAsciiTextureData()
+{
+	return m_textures->getTextureData(m_asciiFileName, false);
+}
+
+TextureData* Font::_getUnicodeTextureData(int id)
+{
+	std::string fileName = "font/glyphs/glyph_" + Util::toString(id) + ".png";
+	return m_textures->getTextureData(fileName, false);
+}
+
+TextureData* Font::_getTextureData(int id)
+{
+	// id == 0 uses the ascii/default texture map
+	return id == 0 ? _getAsciiTextureData() : _getUnicodeTextureData(id);
+}
+
+float Font::_buildChar(int c, float x, float y)
+{
+	assert(c < NUM_GLYPHS);
+
+	// ignore space characters (they are always empty so they don't need to be rendered)
+	if (c == ' ')
+		return static_cast<float>(SPACE_WIDTH);
+
+	bool isAscii = _IsAsciiCharacter(c);
+	float width = static_cast<float>(isAscii ? m_asciiCharWidth[c] : m_unicodeCharWidth[c]);
+
+	int glyphMapId = _GetGlyphMapId(c);
+	std::vector<GlyphQuad>& quads = m_glyphMapQuads[glyphMapId];
+	quads.push_back(GlyphQuad(c, x, y, isAscii));
+	m_usedGlyphMapQuads.insert(glyphMapId);
+
+	return width;
+}
+
+Font::TextObject Font::_createTextObject(const std::string& str, const Color& color)
+{
+	TextObject textObject;
+
+	const uint8_t* data = reinterpret_cast<const uint8_t*>(str.c_str());
+	utf8proc_ssize_t len = str.size();
+
+	float x = 0.0f;
+	float y = 0.0f;
+
+	utf8proc_ssize_t charLen;
+	int c;
+	while ((charLen = utf8proc_iterate(data, len, &c)) > 0) // NOTE: negative values are errors
+	{
+		data += charLen;
+		len -= charLen;
+
+		if (c >= NUM_GLYPHS)
+			c = UNK_CHAR;
+
+		if (c == COLOR_START_CHAR)
+		{
+			if (len > 0)
+			{
+				// TODO: implement formatting
+				// for now, just ignore
+
+				// format code should always be ascii
+				data++;
+				len--;
+			}
+		}
+		else if (c == '\n')
+		{
+			x = 0.0f;
+			y += RENDER_GLYPH_SIZE + NEW_LINE_SPACING;
+		}
+		else
+		{
+			x += _buildChar(c, x, y);
+		}
+	}
+
+	// build meshes
+	Tesselator& t = Tesselator::instance;
+
+	for (std::set<int>::const_iterator it = m_usedGlyphMapQuads.begin(); it != m_usedGlyphMapQuads.end(); it++)
+	{
+		int id = *it;
+		std::vector<GlyphQuad>& quads = m_glyphMapQuads[id];
+
+		TextureData* textureData = _getTextureData(id);
+		if (textureData) // there is a glyph map available for this
+		{
+			t.begin(quads.size() * 4);
+			t.color(color);
+
+			for (std::vector<GlyphQuad>::iterator it = quads.begin(); it != quads.end(); it++)
+				(*it).append(t);
+
+			mce::Mesh mesh = t.end();
+			TextureData* textureData = _getTextureData(id);
+
+			textObject.addPage(mesh, textureData);
+		}
+
+		// cleanup
+		m_glyphMapQuads[id].clear();
+	}
+
+	// cleanup
+	m_usedGlyphMapQuads.clear();
+
+	return textObject;
+}
+
+void Font::drawCached(const std::string& str, int x, int y, const Color& color, bool isShadow)
+{
+	if (str.empty())
+		return;
+
+	const mce::MaterialPtr& material = m_materials.ui_text;
+
+	if (isShadow)
+		currentShaderDarkColor = Color(0.25f, 0.25f, 0.25f);
+	else
+		currentShaderDarkColor = Color::WHITE;
+
+	Color finalColor = color;
+	// For hex colors which don't specify an alpha
+	if (finalColor.a == 0.0f)
+		finalColor.a = 1.0f;
+
+#ifndef FEATURE_GFX_SHADERS
+	finalColor *= currentShaderDarkColor;
+#endif
+
+	MatrixStack::Ref mtx = MatrixStack::World.push();
+	mtx->translate(Vec3(x, y, 0));
+
+	if (m_cachingEnabled)
+	{
+		FontCacheKey key(str, finalColor);
+
+		{
+			TextObjectCacheMap::iterator it = m_textObjectCache.find(key);
+			if (it != m_textObjectCache.end())
+			{
+				it->second.render(material);
+				return;
+			}
+		}
+
+		if (m_recentTextObjectCaches.size() > MAX_CACHE_SIZE)
+		{
+			const FontCacheKey& oldestKey = *m_recentTextObjectCaches.begin();
+			m_textObjectCache.erase(oldestKey);
+			m_recentTextObjectCaches.erase(m_recentTextObjectCaches.begin());
+		}
+
+		TextObject textObject = _createTextObject(str, finalColor);
+		m_textObjectCache.insert(key, textObject);
+		m_recentTextObjectCaches.push_back(key);
+		textObject.render(material);
+	}
+	else
+	{
+		TextObject textObject = _createTextObject(str, finalColor);
+		textObject.render(material);
+	}
+}
+
+void Font::_buildCharSimple(uint8_t c, float x, float y)
 {
 	Tesselator& t = Tesselator::instance;
 
-	float u = float((chr % 16) * 8);
-	float v = float((chr / 16) * 8);
+	float u = float((c % COMMON_MAP_DIMENSION) * ASCII_MAP_GLYPH_SIZE);
+	float v = float((c / COMMON_MAP_DIMENSION) * ASCII_MAP_GLYPH_SIZE);
+	
+	constexpr float D = (1.0f / ASCII_MAP_PIXEL_DIMENSION);
 
-	constexpr float D128 = (1.0f / 128.0f);
+#define CO (ASCII_MAP_GLYPH_SIZE - 0.01f)
 
-#define CO (RENDER_XY_SIZE-0.01f)
-
-	t.vertexUV(x,      y + CO, 0.0f,  u       * D128, (v + CO) * D128);
-	t.vertexUV(x + CO, y + CO, 0.0f, (u + CO) * D128, (v + CO) * D128);
-	t.vertexUV(x + CO, y,      0.0f, (u + CO) * D128,  v       * D128);
-	t.vertexUV(x,      y,      0.0f,  u       * D128,  v       * D128);
+	t.vertexUV(x,      y + CO, 0.0f,  u       * D, (v + CO) * D);
+	t.vertexUV(x + CO, y + CO, 0.0f, (u + CO) * D, (v + CO) * D);
+	t.vertexUV(x + CO, y,      0.0f, (u + CO) * D,  v       * D);
+	t.vertexUV(x,      y,      0.0f,  u       * D,  v       * D);
 
 #undef CO
+}
+
+void Font::drawSimple(const std::string& str, int x, int y, const Color& color, bool bShadow)
+{
+	if (str.empty())
+		return;
+
+	if (bShadow)
+	{
+		currentShaderDarkColor = Color(0.25f, 0.25f, 0.25f);
+	}
+	else
+	{
+		currentShaderDarkColor = Color::WHITE;
+	}
+
+	m_textures->loadAndBindTexture(m_asciiFileName);
+
+	Color finalColor = color;
+	// For hex colors which don't specify an alpha
+	if (finalColor.a == 0.0f)
+		finalColor.a = 1.0f;
+
+#ifndef FEATURE_GFX_SHADERS
+	finalColor *= currentShaderDarkColor;
+#endif
+
+	MatrixStack::Ref mtx = MatrixStack::World.push();
+	mtx->translate(Vec3(x, y, 0));
+
+	Tesselator& t = Tesselator::instance;
+	t.begin(4 * str.size());
+
+	t.color(finalColor);
+
+	float cXPos = 0.0f, cYPos = 0.0f;
+
+	for (size_t i = 0; i < str.size(); i++)
+	{
+		if (str[i] == '\n')
+		{
+			cYPos += RENDER_GLYPH_SIZE + NEW_LINE_SPACING;
+			cXPos = 0;
+			continue;
+		}
+
+		uint8_t x = uint8_t(str[i]);
+
+		_buildCharSimple(x, cXPos, cYPos);
+
+		cXPos += static_cast<float>(m_asciiCharWidth[x]);
+	}
+
+	t.draw(m_materials.ui_text);
+}
+
+void Font::draw(const std::string& str, int x, int y, const Color& color, bool bShadow)
+{
+	drawCached(str, x, y, color, bShadow);
 }
 
 void Font::draw(const std::string& str, int x, int y, const Color& color)
@@ -167,67 +504,53 @@ void Font::drawWordWrap(const std::vector<std::string>& lines, int x, int y, con
 	}
 }
 
-void Font::draw(const std::string& str, int x, int y, const Color& color, bool bShadow)
+void Font::drawSimple(const std::string& str, int x, int y, const Color& color)
 {
-	drawSlow(str, x, y, color, bShadow);
+	drawSimple(str, x, y, color, false);
 }
 
-void Font::drawSlow(const std::string& str, int x, int y, const Color& color, bool bShadow)
+void Font::drawSimpleShadow(const std::string& str, int x, int y, const Color& color)
 {
-	if (str.empty()) return;
+	drawSimple(str, x + 1, y + 1, color, true);
+	drawSimple(str, x, y, color, false);
+}
 
-	if (bShadow)
-	{
-		currentShaderDarkColor = Color(0.25f, 0.25f, 0.25f);
-	}
-	else
-	{
-		currentShaderDarkColor = Color::WHITE;
-	}
+void Font::drawSimpleScalable(const std::string& str, int x, int y, const Color& color, float scale, bool shadow)
+{
+	MatrixStack::Ref matrix = MatrixStack::World.push();
+	matrix->translate(Vec3(x, y, 0));
+	matrix->scale(scale);
+	drawSimple(str, 0, 0, color, shadow);
+}
 
-	m_pTextures->loadAndBindTexture(m_fileName);
-
-	Color finalColor = color;
-	// For hex colors which don't specify an alpha
-	if (finalColor.a == 0.0f)
-		finalColor.a = 1.0f;
-
-#ifndef FEATURE_GFX_SHADERS
-	finalColor *= currentShaderDarkColor;
-#endif
-
-	MatrixStack::Ref mtx = MatrixStack::World.push();
-	mtx->translate(Vec3(x, y, 0));
-
-	Tesselator& t = Tesselator::instance;
-	t.begin(4 * str.size());
-
-	t.color(finalColor);
-
-	float cXPos = 0.0f, cYPos = 0.0f;
-
-	for (size_t i = 0; i < str.size(); i++)
-	{
-		if (str[i] == '\n')
-		{
-			cYPos += RENDER_XY_SIZE + 2.0f;
-			cXPos = 0;
-			continue;
-		}
-
-		uint8_t x = uint8_t(str[i]);
-
-		buildChar(x, cXPos, cYPos);
-
-		cXPos += m_charWidthFloat[x];
-	}
-
-	t.draw(m_materials.ui_text);
+void Font::drawSimpleScalableShadow(const std::string& str, int x, int y, const Color& color, float scale)
+{
+	drawSimpleScalable(str, x + 1, y + 1, color, scale, true);
+	drawSimpleScalable(str, x, y, color, scale);
 }
 
 void Font::onGraphicsReset()
 {
-	init(m_pOptions);
+	_init(m_options);
+}
+
+bool Font::containsUnicodeCharacters(const std::string& str)
+{
+	const uint8_t* data = reinterpret_cast<const uint8_t*>(str.c_str());
+	utf8proc_ssize_t len = str.size();
+
+	utf8proc_ssize_t charLen;
+	int c;
+	while ((charLen = utf8proc_iterate(data, len, &c)) > 0)
+	{
+		if (charLen != 1)
+			return true;
+
+		data += charLen;
+		len -= charLen;
+	}
+
+	return false;
 }
 
 int Font::height(const std::string& str, int maxWidth)
@@ -235,7 +558,7 @@ int Font::height(const std::string& str, int maxWidth)
 	return split(str, maxWidth).size() * 8;
 }
 
-int Font::width(const std::string& str)
+int Font::widthSimple(const std::string& str) const
 {
 	int maxLineWidth = 0, currentLineWidth = 0;
 
@@ -256,13 +579,19 @@ int Font::width(const std::string& str)
 			currentLineWidth = 0;
 		}
 
-		currentLineWidth += m_charWidthInt[uint8_t(str[i])];
+		currentLineWidth += m_asciiCharWidth[uint8_t(str[i])];
 	}
 
 	if (maxLineWidth < currentLineWidth)
 		maxLineWidth = currentLineWidth;
 
 	return maxLineWidth;
+}
+
+int Font::width(const std::string& str) const
+{
+	// TODO
+	return widthSimple(str);
 }
 
 std::vector<std::string> Font::split(const std::string& text, int maxWidth)
@@ -341,4 +670,16 @@ std::vector<std::string> Font::split(const std::string& text, int maxWidth)
 		lines.push_back("");
 
 	return lines;
+}
+
+bool Font::_IsAsciiCharacter(int c)
+{
+	assert(c >= 0);
+	return c < NUM_ASCII_CHARS;
+}
+
+int Font::_GetGlyphMapId(int c)
+{
+	assert(c < NUM_GLYPHS);
+	return c / COMMON_MAP_TOTAL;
 }
