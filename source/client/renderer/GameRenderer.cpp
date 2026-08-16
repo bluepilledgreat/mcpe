@@ -227,11 +227,11 @@ void GameRenderer::_renderDebugOverlay(float a)
 
 	if (m_pMinecraft->getUiTheme() == UI_CONSOLE)
 	{
-		font.drawSimpleScalableShadow(debugText.str(), 44, 38, Color::WHITE);
+		font.drawSimpleScalableShadow(debugText, 44, 38, Color::WHITE);
 	}
 	else
 	{
-		font.drawSimpleShadow(debugText.str(), 2, 2, Color::WHITE);
+		font.drawSimpleShadow(debugText, 2, 2, Color::WHITE);
 	}
 
 #ifdef C_VERTEX_GRAPH_ENABLED
