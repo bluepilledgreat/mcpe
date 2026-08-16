@@ -16,13 +16,13 @@ private:
 
 public:
 	Semaphore(int32_t initialCount, int32_t maximumCount)
-		: m_handle(CreateSemaphoreA(NULL, initialCount, maximumCount, NULL))
+		: m_handle(CreateSemaphore(NULL, initialCount, maximumCount, NULL))
 	{
 		assert(m_handle);
 	}
 
 	Semaphore(int32_t initialCount)
-		: m_handle(CreateSemaphoreA(NULL, initialCount, INT32_MAX, NULL))
+		: m_handle(CreateSemaphore(NULL, initialCount, INT32_MAX, NULL))
 	{
 		assert(m_handle);
 	}
