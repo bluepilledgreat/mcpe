@@ -38,4 +38,8 @@
 // pthreads
 #include "CThread_pthread.hpp"
 
+#else
+
+#error "Missing CThread implementation for platform"
+
 #endif

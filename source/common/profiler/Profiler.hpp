@@ -1,19 +1,14 @@
 #pragma once
-#ifdef _XBOX
-#include <xtl.h>
-#elif defined(_WIN32)
-#define WIN32_LEAN_AND_MEAN
-#include <windows.h>
-#endif
-#include "common/threading/CThread.hpp"
-#include "common/threading/ThreadLocal.hpp"
-#include "common/threading/Mutex.hpp"
-#include "common/threading/SharedMutex.hpp"
+
 #include <cassert>
 #include <string>
 #include <vector>
 #include <stack>
 #include <list>
+#include "common/threading/CThread.hpp"
+#include "common/threading/ThreadLocal.hpp"
+#include "common/threading/Mutex.hpp"
+#include "common/threading/SharedMutex.hpp"
 
 #ifdef _DEBUG
 #define _PROFILER_PARENT_VALIDATION_

@@ -6,6 +6,7 @@
 class Mutex
 {
 private:
+	friend class Semaphore;
 	pthread_mutex_t m_mutex;
 
 private:
@@ -43,6 +44,7 @@ public:
 class RecursiveMutex
 {
 private:
+	friend class Semaphore;
 	pthread_mutex_t m_mutex;
 
 private:
