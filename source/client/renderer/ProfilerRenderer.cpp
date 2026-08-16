@@ -507,7 +507,7 @@ void ProfilerRenderer::dumpCurrentThreadFrame()
 {
 	ProfilerContextRoot* rootContext = nullptr;
 
-	ProfilerThreadId_t currentThreadId = GetCurrentThreadId();
+	CThread::ID currentThreadId = CThread::GetCurrentThreadId();
 	
 	{
 		ProfilerContextRegistry& registry = ProfilerContextRegistry::singleton;

@@ -5,6 +5,7 @@
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 #endif
+#include "common/threading/CThread.hpp"
 #include "common/threading/ThreadLocal.hpp"
 #include "common/threading/Mutex.hpp"
 #include "common/threading/SharedMutex.hpp"
@@ -16,12 +17,6 @@
 
 #ifdef _DEBUG
 #define _PROFILER_PARENT_VALIDATION_
-#endif
-
-#ifdef _WIN32
-typedef DWORD ProfilerThreadId_t;
-#else
-#error
 #endif
 
 struct TimeBucketItem
@@ -164,7 +159,7 @@ class ProfilerContextRoot : public ProfilerContext
 	friend class ProfilerMarker;
 
 private:
-	ProfilerThreadId_t m_threadId;
+	CThread::ID m_threadId;
 	std::stack<ProfilerContext*> m_contextStack;
 
 public:
@@ -177,7 +172,7 @@ private:
 	void popFromContextStack();
 
 public:
-	ProfilerThreadId_t getThreadId() const
+	CThread::ID getThreadId() const
 	{
 		return m_threadId;
 	}

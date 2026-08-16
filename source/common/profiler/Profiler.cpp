@@ -1,4 +1,5 @@
 #include "common/profiler/Profiler.hpp"
+#include "common/threading/CThread.hpp"
 #include "common/Utils.hpp"
 
 const int MAX_DEPTH = 100;
@@ -130,7 +131,7 @@ void ProfilerContext::cleanupElapsedTimeBucket()
 
 ProfilerContextRoot::ProfilerContextRoot()
 	: ProfilerContext("<<<ROOT>>>", this, NULL, 0xFFFFFFFF)
-	, m_threadId(GetCurrentThreadId())
+	, m_threadId(CThread::GetCurrentThreadId())
 {
 	ProfilerContextRegistry::singleton.registerRoot(this);
 }
