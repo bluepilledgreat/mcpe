@@ -14,6 +14,7 @@
 #include "client/renderer/renderer/Tesselator.hpp"
 #include "client/renderer/texture/TextureData.hpp"
 #include "common/utility/HashMap.hpp"
+#include "compat/LegacyCPP_Compat.hpp"
 #include <vector>
 #include <set>
 
@@ -43,6 +44,12 @@ public:
 	{
 		return str != other.str || color != other.color;
 	}
+};
+
+template<>
+struct HashFunction<Color>
+{
+	size_t operator()(const Color& key) const;
 };
 
 template<>
@@ -80,16 +87,37 @@ private:
 		Materials();
 	};
 
+	class Format
+	{
+	public:
+		Color color;
+		bool italic;
+		bool bold;
+		bool strikeThrough;
+		bool underline;
+
+		Format()
+			: color()
+			, italic(false)
+			, bold(false)
+			, strikeThrough(false)
+			, underline(false)
+		{
+		}
+	};
+
 	class GlyphQuad
 	{
 	public:
 		int c;
 		float x;
 		float y;
+		Color color;
+		bool italic;
 		bool isAscii;
 
 	public:
-		GlyphQuad(int c, float x, float y, bool isAscii);
+		GlyphQuad(int c, float x, float y, const Color& color, bool italic, bool isAscii);
 
 	public:
 		void append(Tesselator& t);
@@ -120,8 +148,69 @@ private:
 		void render(const mce::MaterialPtr& material);
 	};
 
+	class TextObjectGroup
+	{
+	public:
+		TextObject* base;
+		TextObject* shadow;
+		bool hasUnicode;
+		bool requiresSeparateShadowTextObject;
+
+	public:
+		TextObjectGroup();
+		~TextObjectGroup();
+
+		MC_CTOR_MOVE(TextObjectGroup);
+		MC_FUNC_MOVE(TextObjectGroup);
+
+	private:
+		void _move(TextObjectGroup& other);
+
+	public:
+		TextObject& getOrCreate(Font& font, const std::string& str, const Color& color, const Color& finalColor, bool isShadow);
+		void adjustRenderPosition(float& x, float& y, bool isShadow) const;
+	};
+
+	class Line
+	{
+	public:
+		float fromX;
+		float toX;
+		float y;
+
+	public:
+		Line(float fromX, float toX, float y);
+
+	public:
+		void append(const Font& font, Tesselator& t, float height, float yShift);
+	};
+
+	class LineMap
+	{
+	public:
+		typedef std::vector<Line> LineList;
+		typedef HashMap<Color, std::vector<Line>> Map;
+
+	public:
+		Map lines;
+		int lineCount;
+
+	public:
+		LineMap();
+
+	public:
+		LineList& getOrCreateList(const Color& color);
+		Line& createLine(const Color& color, float fromX, float y);
+		Line& getLastLine(const Color& color);
+		void clearLines();
+		void append(const Font& font, Tesselator& t, float height, float yShift);
+	};
+
+	friend class TextObjectGroup;
+	friend class Line;
+
 private:
-	typedef HashMap<FontCacheKey, TextObject> TextObjectCacheMap;
+	typedef HashMap<FontCacheKey, TextObjectGroup> TextObjectCacheMap;
 
 private:
 	void _init(Options* pOpts);
@@ -132,15 +221,19 @@ private:
 	TextureData* _getUnicodeTextureData(int id);
 	TextureData* _getTextureData(int id);
 
-	float _buildChar(int c, float x, float y);
-	TextObject _createTextObject(const std::string& str, const Color& color);
+	void _computeRequireSeperateTextObjectForShadow(TextObjectGroup* group, const std::string& str);
+	float _buildChar(int c, float x, float y, const Format& format, bool isShadow);
+	void _buildLines(Tesselator& t);
+	TextObject* _createTextObject(const std::string& str, const Color& color, bool isShadow);
 
 	void _buildCharSimple(uint8_t c, float x, float y);
 
 public:
 	Font(Options* pOpts, const std::string& fileName, Textures* pTexs);
 
-	void drawCached(const std::string&, int x, int y, const Color& color, bool isShadow);
+	void resetFormat(const Color& baseColor);
+
+	void drawCached(const std::string&, int x, int y, Color color, bool isShadow);
 	void drawSimple(const std::string&, int x, int y, const Color& color, bool bShadow);
 
 	void draw(const std::string&, int x, int y, const Color& color);
@@ -158,6 +251,7 @@ public:
 	void drawSimpleScalable(const std::string&, int x, int y, const Color& color, float scale = 2.0f, bool shadow = false);
 	void drawSimpleScalableShadow(const std::string&, int x, int y, const Color& color, float scale = 2.0f);
 
+	// Controls if cache will be used before creating a new text object
 	bool getCachingEnabled() const
 	{
 		return m_cachingEnabled;
@@ -167,18 +261,33 @@ public:
 		m_cachingEnabled = enabled;
 	}
 
-	void onGraphicsReset();
+	// Controls whether or not format should be preserved through text object builds
+	bool getResetFormatOnBuild() const
+	{
+		return m_resetFormatOnBuild;
+	}
+	void setResetFormatOnBuild(bool enabled)
+	{
+		m_resetFormatOnBuild = enabled;
+	}
 
-	bool containsUnicodeCharacters(const std::string& str);
+	void onGraphicsReset();
+	void clearTextObjectCache();
 
 	int width(const std::string& str) const;
 	int widthSimple(const std::string& str) const;
 	std::vector<std::string> split(const std::string& str, int width);
 	int height(const std::string& str, int maxWidth);
 
+public:
+	static bool ContainsAsciiCharacters(const std::string& str);
+	static bool ContainsUnicodeCharacters(const std::string& str);
+
 private:
 	static bool _IsAsciiCharacter(int c);
 	static int _GetGlyphMapId(int c);
+	static bool _IsColorFormatCode(uint8_t c);
+	static const Color& _GetColorFromColorFormatCode(uint8_t c);
 
 private:
 	uint8_t m_asciiCharWidth[NUM_ASCII_CHARS];
@@ -189,10 +298,19 @@ private:
 	TextObjectCacheMap m_textObjectCache;
 	std::vector<FontCacheKey> m_recentTextObjectCaches; // TODO: circular buffer
 	bool m_cachingEnabled;
+	bool m_resetFormatOnBuild;
+
+	Format m_format;
+
+	LineMap m_strikeThroughLines;
+	LineMap m_underlineLines;
+
+	// TODO: switch to integer Vec2
+	int m_pixelX;
+	int m_pixelY;
 
 	std::string m_asciiFileName;
 	Options* m_options;
 	Textures* m_textures;
 	Materials m_materials;
 };
-

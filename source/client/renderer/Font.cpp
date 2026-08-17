@@ -1,38 +1,48 @@
-/********************************************************************
-	Minecraft: Pocket Edition - Decompilation Project
-	Copyright (C) 2023 iProgramInCpp
-	
-	The following code is licensed under the BSD 1 clause license.
-	SPDX-License-Identifier: BSD-1-Clause
- ********************************************************************/
-
-#include "Font.hpp"
+#include "client/renderer/Font.hpp"
 #include "client/renderer/renderer/RenderMaterialGroup.hpp"
 #include "renderer/ShaderConstants.hpp"
-#include "renderer/MatrixStack.hpp"
-#include "common/Util.hpp"
 #include "common/utility/hashing/HashCombine.hpp"
+#include "common/Util.hpp"
 #include <sstream>
 #include <utf8proc.h>
 
+static const Color COLOR_FROM_CODES[] = {
+	Color::FromRGB(0, 0, 0),       // 0 - black
+	Color::FromRGB(0, 0, 170),     // 1 - dark blue
+	Color::FromRGB(0, 170, 0),     // 2 - dark green
+	Color::FromRGB(0, 170, 170),   // 3 - dark aqua
+	Color::FromRGB(170, 0, 0),     // 4 - dark red
+	Color::FromRGB(170, 0, 170),   // 5 - dark purple
+	Color::FromRGB(255, 170, 0),   // 6 - gold
+	Color::FromRGB(170, 170, 170), // 7 - gray
+	Color::FromRGB(85, 85, 85),    // 8 - dark gray
+	Color::FromRGB(85, 85, 255),   // 9 - blue
+	Color::FromRGB(85, 255, 85),   // a - green
+	Color::FromRGB(85, 255, 255),  // b - aqua
+	Color::FromRGB(255, 85, 85),   // c - red
+	Color::FromRGB(255, 85, 255),  // d - light purple
+	Color::FromRGB(255, 255, 85),  // e - yellow
+	Color::FromRGB(255, 255, 255)  // f - white
+};
+
 constexpr int MAX_CACHE_SIZE = 500;
 
-constexpr char COLOR_START_CHAR = '\xa7';
+constexpr uint8_t FORMATTING_START_CHARACTER = '\xa7';
 
 constexpr uint8_t SPACE_WIDTH = 2;
+constexpr uint8_t SPACING_BETWEEN_CHARS = 2;
 constexpr float NEW_LINE_SPACING = 2.0f; // spacing on the Y-axis created by new lines
+constexpr float ITALIC_SHIFT = 3.0f; // shifting by 3 looks fine on both ascii and unicode
+constexpr float STRIKETHROUGH_Y_SHIFT = (Font::RENDER_GLYPH_SIZE / 2.0f) - 1.0f;
+constexpr float UNDERLINE_Y_SHIFT = Font::RENDER_GLYPH_SIZE;
 
 // character to use for characters not in our valid ranges
 constexpr int UNK_CHAR = 65533;
 
-template<>
-struct HashFunction<Color>
+size_t HashFunction<Color>::operator()(const Color& key) const
 {
-	size_t operator()(const Color& key) const
-	{
-		return key.toUInt32();
-	}
-};
+	return key.toUInt32();
+}
 
 size_t HashFunction<FontCacheKey>::operator()(const FontCacheKey& key) const
 {
@@ -46,16 +56,20 @@ Font::Materials::Materials()
 	MATERIAL_PTR(common, ui_text);
 }
 
-Font::GlyphQuad::GlyphQuad(int c, float x, float y, bool isAscii)
+Font::GlyphQuad::GlyphQuad(int c, float x, float y, const Color& color, bool italic, bool isAscii)
 	: c(c)
 	, x(x)
 	, y(y)
+	, color(color)
+	, italic(italic)
 	, isAscii(isAscii)
 {
 }
 
 void Font::GlyphQuad::append(Tesselator& t)
 {
+	t.color(color);
+
 	const int mapGlyphSize = isAscii ? ASCII_MAP_GLYPH_SIZE : UNICODE_MAP_GLYPH_SIZE;
 
 	const int u = (c % COMMON_MAP_DIMENSION) * mapGlyphSize;
@@ -64,10 +78,13 @@ void Font::GlyphQuad::append(Tesselator& t)
 	const int mapSize = isAscii ? ASCII_MAP_PIXEL_DIMENSION : UNICODE_MAP_PIXEL_DIMENSION;
 	const float D = (1.0f / mapSize);
 
-	t.vertexUV(x,                     y + RENDER_GLYPH_SIZE, 0.0f, u * D,                  (v + mapGlyphSize) * D);
-	t.vertexUV(x + RENDER_GLYPH_SIZE, y + RENDER_GLYPH_SIZE, 0.0f, (u + mapGlyphSize) * D, (v + mapGlyphSize) * D);
-	t.vertexUV(x + RENDER_GLYPH_SIZE, y,                     0.0f, (u + mapGlyphSize) * D, v * D);
-	t.vertexUV(x,                     y,                     0.0f, u * D,                  v * D);
+	// if this glyph is italic, shift the top corner by X to the right
+	float shift = italic ? ITALIC_SHIFT : 0.0f;
+
+	t.vertexUV(x,                             y + RENDER_GLYPH_SIZE, 0.0f, u * D,                  (v + mapGlyphSize) * D);
+	t.vertexUV(x + RENDER_GLYPH_SIZE,         y + RENDER_GLYPH_SIZE, 0.0f, (u + mapGlyphSize) * D, (v + mapGlyphSize) * D);
+	t.vertexUV(x + RENDER_GLYPH_SIZE + shift, y,                     0.0f, (u + mapGlyphSize) * D, v * D);
+	t.vertexUV(x + shift,                     y,                     0.0f, u * D,                  v * D);
 }
 
 Font::TextObject::TextObject()
@@ -100,11 +117,156 @@ Font::TextObject::Page::Page(mce::Mesh& mesh, TextureData* textureData)
 {
 }
 
+Font::TextObjectGroup::TextObjectGroup()
+	: base(nullptr)
+	, shadow(nullptr)
+	, hasUnicode(false)
+	, requiresSeparateShadowTextObject(false)
+{
+}
+
+Font::TextObjectGroup::~TextObjectGroup()
+{
+	delete base;
+	delete shadow;
+}
+
+void Font::TextObjectGroup::_move(TextObjectGroup& other)
+{
+	base = other.base;
+	shadow = other.shadow;
+	hasUnicode = other.hasUnicode;
+	requiresSeparateShadowTextObject = other.requiresSeparateShadowTextObject;
+	
+	other.base = nullptr;
+	other.shadow = nullptr;
+}
+
+Font::TextObject& Font::TextObjectGroup::getOrCreate(Font& font, const std::string& str, const Color& color, const Color& finalColor, bool isShadow)
+{
+	if (!requiresSeparateShadowTextObject)
+	{
+		if (!base)
+			base = font._createTextObject(str, color, false);
+
+		return *base;
+	}
+	else
+	{
+		if (isShadow)
+		{
+			if (!shadow)
+				shadow = font._createTextObject(str, finalColor, true);
+
+			return *shadow;
+		}
+		else
+		{
+			if (!base)
+				base = font._createTextObject(str, finalColor, false);
+
+			return *base;
+		}
+	}
+}
+
+void Font::TextObjectGroup::adjustRenderPosition(float& x, float& y, bool isShadow) const
+{
+	if (!requiresSeparateShadowTextObject)
+	{
+		// offset base mesh if we're rendering a shadow
+		if (isShadow)
+		{
+			float offset = hasUnicode ? (RENDER_GLYPH_SIZE / UNICODE_MAP_GLYPH_SIZE) : 1.0f;
+			x += offset;
+			y += offset;
+		}
+	}
+}
+
+Font::Line::Line(float fromX, float toX, float y)
+	: fromX(fromX)
+	, toX(toX)
+	, y(y)
+{
+}
+
+Font::LineMap::LineMap()
+	: lineCount(0)
+{
+}
+
+void Font::Line::append(const Font& font, Tesselator& t, float height, float yShift)
+{
+	if (fromX == toX)
+		return;
+
+	assert(font.m_pixelX != -1 && font.m_pixelY != -1);
+
+	const int u = font.m_pixelX;
+	const int v = font.m_pixelY;
+
+	const int mapSize = ASCII_MAP_PIXEL_DIMENSION; // always the ascii map for now
+	const float D = (1.0f / mapSize);
+
+	t.vertexUV(fromX, y + height + yShift, 0.0f, u * D,          (v + 1.0f) * D);
+	t.vertexUV(toX,   y + height + yShift, 0.0f, (u + 1.0f) * D, (v + 1.0f) * D);
+	t.vertexUV(toX,   y + yShift,          0.0f, (u + 1.0f) * D, v * D);
+	t.vertexUV(fromX, y + yShift,          0.0f, u * D,          v * D);
+}
+
+Font::LineMap::LineList& Font::LineMap::getOrCreateList(const Color& color)
+{
+	// map automatically creates entry
+	return lines[color];
+}
+
+Font::Line& Font::LineMap::createLine(const Color& color, float fromX, float y)
+{
+	LineList& list = getOrCreateList(color);
+	list.push_back(Line(fromX, 0.0f, y));
+	++lineCount;
+	return list.back();
+}
+
+Font::Line& Font::LineMap::getLastLine(const Color& color)
+{
+	LineList& list = getOrCreateList(color);
+	return list.back();
+}
+
+void Font::LineMap::clearLines()
+{
+	lines.clear();
+	lineCount = 0;
+}
+
+void Font::LineMap::append(const Font& font, Tesselator& t, float height, float yShift)
+{
+	for (Map::iterator it = lines.begin(); it != lines.end(); it++)
+	{
+		const Color& color = it->first;
+		LineList& list = it->second;
+
+		assert(!list.empty());
+
+		t.color(color);
+
+		for (LineList::iterator it = list.begin(); it != list.end(); it++)
+		{
+			it->append(font, t, height, yShift);
+		}
+	}
+}
+
 Font::Font(Options* options, const std::string& fileName, Textures* textures)
 	: m_asciiFileName(fileName)
 	, m_options(options)
 	, m_textures(textures)
 	, m_cachingEnabled(true)
+	, m_resetFormatOnBuild(true)
+	, m_pixelX(-1)
+	, m_pixelY(-1)
 {
 	m_recentTextObjectCaches.reserve(MAX_CACHE_SIZE);
 	_init(options);
@@ -118,6 +280,9 @@ void Font::_init(Options* pOpts)
 
 void Font::_computeAsciiSizes()
 {
+	m_pixelX = -1;
+	m_pixelY = -1;
+
 	TextureData* defaultTexture = m_textures->getTextureData(m_asciiFileName, false);
 	if (!defaultTexture)
 		throw std::runtime_error("Missing ASCII font image");
@@ -149,6 +314,14 @@ void Font::_computeAsciiSizes()
 					if (static_cast<uint8_t>(pixelData) != 0) // check for channel data
 					{
 						widthMax = xOffset;
+
+						// mark a position where there is a opaque pixel in the ascii map
+						if (m_pixelX == -1 || m_pixelY == -1)
+						{
+							m_pixelX = ASCII_MAP_GLYPH_SIZE * x + xOffset;
+							m_pixelY = ASCII_MAP_GLYPH_SIZE * y + yOffset;
+						}
+
 						goto done;
 					}
 				}
@@ -158,7 +331,7 @@ void Font::_computeAsciiSizes()
 			;
 		}
 
-		m_asciiCharWidth[c] = widthMax + 2;
+		m_asciiCharWidth[c] = widthMax + SPACING_BETWEEN_CHARS;
 	}
 }
 
@@ -175,8 +348,7 @@ void Font::_readUnicodeSizes(const std::string& filePath)
 	{
 		// these widths are for font size 16
 		// we render at font size 8
-		// +1 is for better spacing between characters
-		m_unicodeCharWidth[i] = static_cast<uint8_t>(fileData[i] / (COMMON_MAP_DIMENSION / RENDER_GLYPH_SIZE)) + 1;
+		m_unicodeCharWidth[i] = static_cast<uint8_t>(fileData[i] / (COMMON_MAP_DIMENSION / RENDER_GLYPH_SIZE)) + SPACING_BETWEEN_CHARS;
 	}
 }
 
@@ -197,7 +369,34 @@ TextureData* Font::_getTextureData(int id)
 	return id == 0 ? _getAsciiTextureData() : _getUnicodeTextureData(id);
 }
 
-float Font::_buildChar(int c, float x, float y)
+void Font::resetFormat(const Color& baseColor)
+{
+	m_format.color = baseColor;
+	m_format.italic = false;
+	m_format.bold = false;
+	m_format.strikeThrough = false;
+	m_format.underline = false;
+}
+
+void Font::_computeRequireSeperateTextObjectForShadow(TextObjectGroup* group, const std::string& str)
+{
+#ifndef FEATURE_GFX_SHADERS
+	// we will always need to use a seperate text object for shadows
+	// if shaders are not enabled
+	// as finalColor is multiplied by currentShaderDarkColor
+	group->requiresSeparateShadowTextObject = true;
+#else
+	if (group->hasUnicode)
+	{
+		// we need a seperate text object for shadows if ascii and unicode characters are present
+		// since ascii and unicode characters need different shadow text position offsets
+		if (ContainsAsciiCharacters(str))
+			group->requiresSeparateShadowTextObject = true;
+	}
+#endif
+}
+
+float Font::_buildChar(int c, float x, float y, const Format& format, bool isShadow)
 {
 	assert(c < NUM_GLYPHS);
 
@@ -210,15 +409,56 @@ float Font::_buildChar(int c, float x, float y)
 
 	int glyphMapId = _GetGlyphMapId(c);
 	std::vector<GlyphQuad>& quads = m_glyphMapQuads[glyphMapId];
-	quads.push_back(GlyphQuad(c, x, y, isAscii));
+
+	if (isShadow)
+	{
+		float offset = isAscii ? 1.0f : (RENDER_GLYPH_SIZE / UNICODE_MAP_GLYPH_SIZE);
+		x += offset;
+		y += offset;
+	}
+
+	if (format.bold)
+	{
+		float widthAddition = isAscii ? 1.0f : (RENDER_GLYPH_SIZE / UNICODE_MAP_GLYPH_SIZE);
+		width += widthAddition;
+
+		for (int i = 0; i < 2; i++)
+			quads.push_back(GlyphQuad(c, x + (widthAddition * i), y, format.color, format.italic, isAscii));
+	}
+	else
+	{
+		quads.push_back(GlyphQuad(c, x, y, format.color, format.italic, isAscii));
+	}
+
 	m_usedGlyphMapQuads.insert(glyphMapId);
 
 	return width;
 }
 
-Font::TextObject Font::_createTextObject(const std::string& str, const Color& color)
+void Font::_buildLines(Tesselator& t)
 {
-	TextObject textObject;
+	m_strikeThroughLines.append(*this, t, 1.0f, STRIKETHROUGH_Y_SHIFT);
+	m_underlineLines.append(*this, t, 1.0f, UNDERLINE_Y_SHIFT);
+}
+
+Font::TextObject* Font::_createTextObject(const std::string& str, const Color& color, bool isShadow)
+{
+	TextObject* textObject = new TextObject();
+
+	Line* currentStrikeThroughLine = nullptr;
+	Line* currentUnderlineLine = nullptr;
+
+	if (m_resetFormatOnBuild)
+	{
+		resetFormat(color);
+	}
+	else
+	{
+		if (m_format.strikeThrough)
+			currentStrikeThroughLine = &m_strikeThroughLines.createLine(m_format.color, 0.0f, 0.0f);
+		if (m_format.underline)
+			currentUnderlineLine = &m_underlineLines.createLine(m_format.color, 0.0f, 0.0f);
+	}
 
 	const uint8_t* data = reinterpret_cast<const uint8_t*>(str.c_str());
 	utf8proc_ssize_t len = str.size();
@@ -228,37 +468,142 @@ Font::TextObject Font::_createTextObject(const std::string& str, const Color& co
 
 	utf8proc_ssize_t charLen;
 	int c;
-	while ((charLen = utf8proc_iterate(data, len, &c)) > 0) // NOTE: negative values are errors
+	while ((charLen = utf8proc_iterate(data, len, &c)) > 0)
 	{
+		assert(c >= 0);
+
 		data += charLen;
 		len -= charLen;
 
 		if (c >= NUM_GLYPHS)
 			c = UNK_CHAR;
 
-		if (c == COLOR_START_CHAR)
+		if (c == FORMATTING_START_CHARACTER)
 		{
 			if (len > 0)
 			{
-				// TODO: implement formatting
-				// for now, just ignore
-
 				// format code should always be ascii
+				uint8_t formatCode = *data;
+
+				if (_IsColorFormatCode(formatCode))
+				{
+					m_format.color = _GetColorFromColorFormatCode(formatCode);
+#ifndef FEATURE_GFX_SHADERS
+					m_format.color *= currentShaderDarkColor;
+#endif
+
+					float offset = isShadow ? 1.0f : 0.0f;
+					if (m_format.strikeThrough)
+					{
+						assert(currentStrikeThroughLine);
+						currentStrikeThroughLine->toX = x + offset;
+						currentStrikeThroughLine = &m_strikeThroughLines.createLine(m_format.color, x + offset, y + offset);
+					}
+
+					if (m_format.underline)
+					{
+						assert(currentUnderlineLine);
+						currentUnderlineLine->toX = x + offset;
+						currentUnderlineLine = &m_underlineLines.createLine(m_format.color, x + offset, y + offset);
+					}
+				}
+				else
+				{
+					float offset;
+
+					// TODO: obfuscation
+					switch (formatCode)
+					{
+					case 'l':
+						m_format.bold = true;
+						break;
+
+					case 'o':
+						m_format.italic = true;
+						break;
+
+					case 'm':
+						if (!m_format.strikeThrough)
+						{
+							m_format.strikeThrough = true;
+							offset = isShadow ? 1.0f : 0.0f;
+							currentStrikeThroughLine = &m_strikeThroughLines.createLine(m_format.color, x + offset, y + offset);
+						}
+						break;
+
+					case 'n':
+						if (!m_format.underline)
+						{
+							m_format.underline = true;
+							offset = isShadow ? 1.0f : 0.0f;
+							currentUnderlineLine = &m_underlineLines.createLine(m_format.color, x + offset, y + offset);
+						}
+						break;
+
+					case 'r':
+						resetFormat(color);
+
+						offset = isShadow ? 1.0f : 0.0f;
+						if (currentStrikeThroughLine)
+							currentStrikeThroughLine->toX = x + offset;
+						if (currentUnderlineLine)
+							currentUnderlineLine->toX = x + offset;
+						break;
+					}
+				}
+				
 				data++;
 				len--;
 			}
 		}
 		else if (c == '\n')
 		{
+			float offset = isShadow ? 1.0f : 0.0f;
+
+			if (m_format.strikeThrough)
+			{
+				assert(currentStrikeThroughLine);
+				currentStrikeThroughLine->toX = x + offset;
+			}
+
+			if (m_format.underline)
+			{
+				assert(currentUnderlineLine);
+				currentUnderlineLine->toX = x + offset;
+			}
+
 			x = 0.0f;
 			y += RENDER_GLYPH_SIZE + NEW_LINE_SPACING;
+
+			if (m_format.strikeThrough)
+				currentStrikeThroughLine = &m_strikeThroughLines.createLine(m_format.color, offset, y + offset);
+
+			if (m_format.underline)
+				currentUnderlineLine = &m_strikeThroughLines.createLine(m_format.color, offset, y + offset);
 		}
 		else
 		{
-			x += _buildChar(c, x, y);
+			x += _buildChar(c, x, y, m_format, isShadow);
 		}
 	}
 
+	// assert no utf8 errors
+	assert(charLen >= 0);
+
+	// end strikethrough and underline lines
+	float lineOffset = isShadow ? 1.0f : 0.0f;
+	if (m_format.strikeThrough)
+	{
+		assert(currentStrikeThroughLine);
+		currentStrikeThroughLine->toX = x + lineOffset;
+	}
+
+	if (m_format.underline)
+	{
+		assert(currentUnderlineLine);
+		currentUnderlineLine->toX = x + lineOffset;
+	}
+		
 	// build meshes
 	Tesselator& t = Tesselator::instance;
 
@@ -271,19 +616,40 @@ Font::TextObject Font::_createTextObject(const std::string& str, const Color& co
 		if (textureData) // there is a glyph map available for this
 		{
 			t.begin(quads.size() * 4);
-			t.color(color);
 
 			for (std::vector<GlyphQuad>::iterator it = quads.begin(); it != quads.end(); it++)
 				(*it).append(t);
 
 			mce::Mesh mesh = t.end();
-			TextureData* textureData = _getTextureData(id);
-
-			textObject.addPage(mesh, textureData);
+			textObject->addPage(mesh, textureData);
 		}
 
 		// cleanup
 		m_glyphMapQuads[id].clear();
+	}
+
+	// build line meshes
+	bool needsToBuildLines = m_strikeThroughLines.lineCount != 0 || m_underlineLines.lineCount != 0;
+
+	if (needsToBuildLines)
+	{
+		// we use the ascii map to build lines
+		TextureData* textureData = _getAsciiTextureData();
+		if (textureData)
+		{
+			int maxVertices = m_strikeThroughLines.lineCount * 4 + m_underlineLines.lineCount * 4;
+
+			t.begin(maxVertices);
+
+			_buildLines(t);
+
+			mce::Mesh mesh = t.end();
+			textObject->addPage(mesh, textureData);
+		}
+
+		// cleanup
+		m_strikeThroughLines.clearLines();
+		m_underlineLines.clearLines();
 	}
 
 	// cleanup
@@ -292,7 +658,7 @@ Font::TextObject Font::_createTextObject(const std::string& str, const Color& co
 	return textObject;
 }
 
-void Font::drawCached(const std::string& str, int x, int y, const Color& color, bool isShadow)
+void Font::drawCached(const std::string& str, int x, int y, Color color, bool isShadow)
 {
 	if (str.empty())
 		return;
@@ -304,47 +670,67 @@ void Font::drawCached(const std::string& str, int x, int y, const Color& color, 
 	else
 		currentShaderDarkColor = Color::WHITE;
 
-	Color finalColor = color;
 	// For hex colors which don't specify an alpha
-	if (finalColor.a == 0.0f)
-		finalColor.a = 1.0f;
+	if (color.a == 0.0f)
+		color.a = 1.0f;
 
+	Color finalColor = color;
 #ifndef FEATURE_GFX_SHADERS
 	finalColor *= currentShaderDarkColor;
 #endif
 
-	MatrixStack::Ref mtx = MatrixStack::World.push();
-	mtx->translate(Vec3(x, y, 0));
-
 	if (m_cachingEnabled)
 	{
-		FontCacheKey key(str, finalColor);
+		FontCacheKey key(str, color);
+
+		TextObjectGroup* group = nullptr;
+		bool isInCache = false;
 
 		{
 			TextObjectCacheMap::iterator it = m_textObjectCache.find(key);
 			if (it != m_textObjectCache.end())
 			{
-				it->second.render(material);
-				return;
+				isInCache = true;
+				group = &it->second;
 			}
 		}
 
-		if (m_recentTextObjectCaches.size() > MAX_CACHE_SIZE)
+		if (!group)
 		{
-			const FontCacheKey& oldestKey = *m_recentTextObjectCaches.begin();
-			m_textObjectCache.erase(oldestKey);
-			m_recentTextObjectCaches.erase(m_recentTextObjectCaches.begin());
+			assert(!isInCache);
+
+			if (m_recentTextObjectCaches.size() > MAX_CACHE_SIZE)
+			{
+				const FontCacheKey& oldestKey = *m_recentTextObjectCaches.begin();
+				m_textObjectCache.erase(oldestKey);
+				m_recentTextObjectCaches.erase(m_recentTextObjectCaches.begin());
+			}
+
+			group = &m_textObjectCache[key];
+			group->hasUnicode = ContainsUnicodeCharacters(str);
+			_computeRequireSeperateTextObjectForShadow(group, str);
+			m_recentTextObjectCaches.push_back(key);
 		}
 
-		TextObject textObject = _createTextObject(str, finalColor);
-		m_textObjectCache.insert(key, textObject);
-		m_recentTextObjectCaches.push_back(key);
+		TextObject& textObject = group->getOrCreate(*this, str, color, finalColor, isShadow);
+
+		float fX = x;
+		float fY = y;
+
+		group->adjustRenderPosition(fX, fY, isShadow);
+		MatrixStack::Ref mtx = MatrixStack::World.push();
+		mtx->translate(Vec3(fX, fY, 0.0f));
+
 		textObject.render(material);
 	}
 	else
 	{
-		TextObject textObject = _createTextObject(str, finalColor);
-		textObject.render(material);
+		MatrixStack::Ref mtx = MatrixStack::World.push();
+		mtx->translate(Vec3(x, y, 0));
+
+		TextObject* textObject = _createTextObject(str, finalColor, isShadow);
+		textObject->render(material);
+		delete textObject;
 	}
 }
 
@@ -433,7 +819,8 @@ void Font::draw(const std::string& str, int x, int y, const Color& color)
 
 void Font::drawShadow(const std::string& str, int x, int y, const Color& color)
 {
-	draw(str, x + 1, y + 1, color, true);
+	//draw(str, x + 1, y + 1, color, true);
+	draw(str, x, y, color, true);
 	draw(str, x, y, color, false);
 }
 
@@ -447,8 +834,9 @@ void Font::drawScalable(const std::string& str, int x, int y, const Color& color
 
 void Font::drawScalableShadow(const std::string& str, int x, int y, const Color& color, float scale)
 {
-	drawScalable(str, x + 1, y + 1, color, scale, true);
-	drawScalable(str, x, y, color, scale);
+	//drawScalable(str, x + 1, y + 1, color, scale, true);
+	drawScalable(str, x, y, color, scale, true);
+	drawScalable(str, x, y, color, scale, false);
 }
 
 void Font::drawString(const std::string& str, int x, int y, const Color& color, bool hasShadow, bool isConsole)
@@ -534,7 +922,13 @@ void Font::onGraphicsReset()
 	_init(m_options);
 }
 
-bool Font::containsUnicodeCharacters(const std::string& str)
+void Font::clearTextObjectCache()
+{
+	m_textObjectCache.clear();
+	m_recentTextObjectCaches.clear();
+}
+
+bool Font::ContainsAsciiCharacters(const std::string& str)
 {
 	const uint8_t* data = reinterpret_cast<const uint8_t*>(str.c_str());
 	utf8proc_ssize_t len = str.size();
@@ -543,7 +937,26 @@ bool Font::containsUnicodeCharacters(const std::string& str)
 	int c;
 	while ((charLen = utf8proc_iterate(data, len, &c)) > 0)
 	{
-		if (charLen != 1)
+		if (_IsAsciiCharacter(c))
+			return true;
+
+		data += charLen;
+		len -= charLen;
+	}
+
+	return false;
+}
+
+bool Font::ContainsUnicodeCharacters(const std::string& str)
+{
+	const uint8_t* data = reinterpret_cast<const uint8_t*>(str.c_str());
+	utf8proc_ssize_t len = str.size();
+
+	utf8proc_ssize_t charLen;
+	int c;
+	while ((charLen = utf8proc_iterate(data, len, &c)) > 0)
+	{
+		if (!_IsAsciiCharacter(c))
 			return true;
 
 		data += charLen;
@@ -566,7 +979,7 @@ int Font::widthSimple(const std::string& str) const
 	{
 		char chr = str[i];
 
-		if (chr == COLOR_START_CHAR)
+		if (chr == FORMATTING_START_CHARACTER)
 		{
 			// skip the color code as well
 			i++;
@@ -682,4 +1095,19 @@ int Font::_GetGlyphMapId(int c)
 {
 	assert(c < NUM_GLYPHS);
 	return c / COMMON_MAP_TOTAL;
+}
+
+bool Font::_IsColorFormatCode(uint8_t c)
+{
+	return (c >= '0' && c <= '9') || (c >= 'a' && c <= 'f');
+}
+
+const Color& Font::_GetColorFromColorFormatCode(uint8_t c)
+{
+	assert(_IsColorFormatCode(c));
+
+	int index = c >= 'a' ? c - 'a' + 10 : c - '0';
+	// TODO: assert index is within size of array
+
+	return COLOR_FROM_CODES[index];
 }
