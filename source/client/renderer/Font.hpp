@@ -277,7 +277,7 @@ public:
 	int width(const std::string& str) const;
 	int widthSimple(const std::string& str) const;
 	std::vector<std::string> split(const std::string& str, int width);
-	int height(const std::string& str, int maxWidth);
+	int height(const std::string& str);
 
 public:
 	static bool ContainsAsciiCharacters(const std::string& str);
