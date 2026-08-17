@@ -759,15 +759,9 @@ void Font::drawSimple(const std::string& str, int x, int y, const Color& color, 
 		return;
 
 	if (bShadow)
-	{
 		currentShaderDarkColor = Color(0.25f, 0.25f, 0.25f);
-	}
 	else
-	{
 		currentShaderDarkColor = Color::WHITE;
-	}
-
-	m_textures->loadAndBindTexture(m_asciiFileName);
 
 	Color finalColor = color;
 	// For hex colors which don't specify an alpha
@@ -777,6 +771,15 @@ void Font::drawSimple(const std::string& str, int x, int y, const Color& color, 
 #ifndef FEATURE_GFX_SHADERS
 	finalColor *= currentShaderDarkColor;
 #endif
+
+	TextureData* textureData = _getAsciiTextureData();
+	if (!textureData)
+	{
+		assert(false);
+		return;
+	}
+
+	textureData->bind();
 
 	MatrixStack::Ref mtx = MatrixStack::World.push();
 	mtx->translate(Vec3(x, y, 0));
@@ -790,18 +793,23 @@ void Font::drawSimple(const std::string& str, int x, int y, const Color& color, 
 
 	for (size_t i = 0; i < str.size(); i++)
 	{
-		if (str[i] == '\n')
+		uint8_t c = static_cast<uint8_t>(str[i]);
+
+		if (c == FORMATTING_START_CHARACTER)
+		{
+			// skip format code too
+			i++;
+		}
+		else if (c == '\n')
 		{
 			cYPos += RENDER_GLYPH_SIZE + NEW_LINE_SPACING;
 			cXPos = 0;
-			continue;
 		}
-
-		uint8_t x = uint8_t(str[i]);
-
-		_buildCharSimple(x, cXPos, cYPos);
-
-		cXPos += static_cast<float>(m_charWidth[x]);
+		else
+		{
+			_buildCharSimple(c, cXPos, cYPos);
+			cXPos += static_cast<float>(m_charWidth[c]);
+		}
 	}
 
 	t.draw(m_materials.ui_text);
