@@ -928,25 +928,6 @@ void Font::clearTextObjectCache()
 	m_recentTextObjectCaches.clear();
 }
 
-bool Font::ContainsAsciiCharacters(const std::string& str)
-{
-	const uint8_t* data = reinterpret_cast<const uint8_t*>(str.c_str());
-	utf8proc_ssize_t len = str.size();
-
-	utf8proc_ssize_t charLen;
-	int c;
-	while ((charLen = utf8proc_iterate(data, len, &c)) > 0)
-	{
-		if (_IsAsciiCharacter(c))
-			return true;
-
-		data += charLen;
-		len -= charLen;
-	}
-
-	return false;
-}
-
 bool Font::ContainsUnicodeCharacters(const std::string& str)
 {
 	const uint8_t* data = reinterpret_cast<const uint8_t*>(str.c_str());
@@ -1131,6 +1112,25 @@ std::vector<std::string> Font::split(const std::string& text, int maxWidth)
 		lines.push_back("");
 
 	return lines;
+}
+
+bool Font::ContainsAsciiCharacters(const std::string& str)
+{
+	const uint8_t* data = reinterpret_cast<const uint8_t*>(str.c_str());
+	utf8proc_ssize_t len = str.size();
+
+	utf8proc_ssize_t charLen;
+	int c;
+	while ((charLen = utf8proc_iterate(data, len, &c)) > 0)
+	{
+		if (_IsAsciiCharacter(c))
+			return true;
+
+		data += charLen;
+		len -= charLen;
+	}
+
+	return false;
 }
 
 bool Font::_IsAsciiCharacter(int c)
