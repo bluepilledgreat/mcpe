@@ -267,6 +267,7 @@ Font::Font(Options* options, const std::string& fileName, Textures* textures)
 	, m_resetFormatOnBuild(true)
 	, m_pixelX(-1)
 	, m_pixelY(-1)
+	, m_unicodeShadowOffset(RENDER_GLYPH_SIZE / UNICODE_MAP_GLYPH_SIZE)
 {
 	m_recentTextObjectCaches.reserve(MAX_CACHE_SIZE);
 	_init(options);
@@ -416,7 +417,7 @@ float Font::_buildChar(int c, float x, float y, const Format& format, bool isSha
 
 	if (isShadow)
 	{
-		float offset = isAscii ? 1.0f : (RENDER_GLYPH_SIZE / UNICODE_MAP_GLYPH_SIZE);
+		float offset = isAscii ? 1.0f : m_unicodeShadowOffset;
 		x += offset;
 		y += offset;
 	}

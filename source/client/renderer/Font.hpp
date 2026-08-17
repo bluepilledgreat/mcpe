@@ -323,4 +323,7 @@ private:
 	Options* m_options;
 	Textures* m_textures;
 	Materials m_materials;
+
+protected:
+	float m_unicodeShadowOffset;
 };

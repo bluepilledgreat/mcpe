@@ -3,6 +3,7 @@
 ConsoleFont::ConsoleFont(Options* options, const std::string& fileName, Textures* textures)
 	: Font(options, fileName, textures)
 {
+	m_unicodeShadowOffset = 1.0f;
 }
 
 ConsoleFont::~ConsoleFont()
