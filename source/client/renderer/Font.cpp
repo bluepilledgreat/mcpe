@@ -973,26 +973,29 @@ int Font::height(const std::string& str)
 
 int Font::widthSimple(const std::string& str) const
 {
-	int maxLineWidth = 0, currentLineWidth = 0;
+	int maxLineWidth = 0;
+	int currentLineWidth = 0;
 
-	for (int i = 0; i < int(str.size()); i++)
+	for (size_t i = 0; i < str.size(); i++)
 	{
-		char chr = str[i];
+		uint8_t c = static_cast<uint8_t>(str[i]);
 
-		if (chr == FORMATTING_START_CHARACTER)
+		if (c == FORMATTING_START_CHARACTER)
 		{
-			// skip the color code as well
+			// skip format code
 			i++;
-			continue;
 		}
-		if (chr == '\n')
+		else if (c == '\n')
 		{
 			if (maxLineWidth < currentLineWidth)
 				maxLineWidth = currentLineWidth;
+
 			currentLineWidth = 0;
 		}
-
-		currentLineWidth += m_charWidth[uint8_t(str[i])];
+		else
+		{
+			currentLineWidth += m_charWidth[c];
+		}
 	}
 
 	if (maxLineWidth < currentLineWidth)
@@ -1003,8 +1006,53 @@ int Font::widthSimple(const std::string& str) const
 
 int Font::width(const std::string& str) const
 {
-	// TODO
-	return widthSimple(str);
+	int largestWidth = 0;
+	int currWidth = 0;
+
+	const uint8_t* data = reinterpret_cast<const uint8_t*>(str.c_str());
+	utf8proc_ssize_t len = str.size();
+
+	utf8proc_ssize_t charLen;
+	int c;
+	while ((charLen = utf8proc_iterate(data, len, &c)) > 0)
+	{
+		assert(c >= 0);
+
+		data += charLen;
+		len -= charLen;
+
+		if (c >= NUM_GLYPHS)
+			c = UNK_CHAR;
+
+		if (c == FORMATTING_START_CHARACTER)
+		{
+			if (len > 0)
+			{
+				// skip the format code
+				data++;
+				len--;
+			}
+		}
+		else if (c == '\n')
+		{
+			if (currWidth > largestWidth)
+				largestWidth = currWidth;
+
+			currWidth = 0;
+		}
+		else
+		{
+			currWidth += m_charWidth[c];
+		}
+	}
+
+	// assert no utf8 errors
+	assert(charLen >= 0);
+
+	if (currWidth > largestWidth)
+		largestWidth = currWidth;
+
+	return largestWidth;
 }
 
 std::vector<std::string> Font::split(const std::string& text, int maxWidth)
