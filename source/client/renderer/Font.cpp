@@ -272,6 +272,10 @@ Font::Font(Options* options, const std::string& fileName, Textures* textures)
 	_init(options);
 }
 
+Font::~Font()
+{
+}
+
 void Font::_init(Options* pOpts)
 {
 	memset(m_charWidth, 0, sizeof(m_charWidth));
@@ -847,21 +851,15 @@ void Font::drawScalableShadow(const std::string& str, int x, int y, const Color&
 	drawScalable(str, x, y, color, scale, false);
 }
 
-void Font::drawString(const std::string& str, int x, int y, const Color& color, bool hasShadow, bool isConsole)
+void Font::drawString(const std::string& str, int x, int y, const Color& color, bool hasShadow)
 {
 	if (hasShadow)
 	{
-		if (isConsole)
-			drawScalableShadow(str, x, y, color);
-		else
-			drawShadow(str, x, y, color);
+		drawShadow(str, x, y, color);
 	}
 	else
 	{
-		if (isConsole)
-			drawScalable(str, x, y, color);
-		else
-			draw(str, x, y, color);
+		draw(str, x, y, color);
 	}
 }
 
