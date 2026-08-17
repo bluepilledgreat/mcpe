@@ -274,10 +274,13 @@ public:
 	void onGraphicsReset();
 	void clearTextObjectCache();
 
-	int width(const std::string& str) const;
-	int widthSimple(const std::string& str) const;
 	std::vector<std::string> split(const std::string& str, int width);
-	int height(const std::string& str);
+
+	int height(const std::string& str) const;
+	int width(const std::string& str) const;
+
+	int heightSimple(const std::string& str) const;
+	int widthSimple(const std::string& str) const;
 
 public:
 	static bool ContainsAsciiCharacters(const std::string& str);
@@ -288,6 +291,7 @@ private:
 	static int _GetGlyphMapId(int c);
 	static bool _IsColorFormatCode(uint8_t c);
 	static const Color& _GetColorFromColorFormatCode(uint8_t c);
+	static int _CountNewLines(const std::string& str);
 
 private:
 	uint8_t m_charWidth[NUM_GLYPHS];

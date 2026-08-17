@@ -955,48 +955,15 @@ bool Font::ContainsUnicodeCharacters(const std::string& str)
 	return false;
 }
 
-int Font::height(const std::string& str)
+int Font::height(const std::string& str) const
 {
 	int height = 0;
 
-	int newLines = static_cast<int>(std::count(str.begin(), str.end(), '\n'));
+	int newLines = static_cast<int>(_CountNewLines(str));
 	height += (newLines + 1) * static_cast<int>(RENDER_GLYPH_SIZE);
 	height += newLines * static_cast<int>(NEW_LINE_SPACING);
 
 	return height;
-}
-
-int Font::widthSimple(const std::string& str) const
-{
-	int maxLineWidth = 0;
-	int currentLineWidth = 0;
-
-	for (size_t i = 0; i < str.size(); i++)
-	{
-		uint8_t c = static_cast<uint8_t>(str[i]);
-
-		if (c == FORMATTING_START_CHARACTER)
-		{
-			// skip format code
-			i++;
-		}
-		else if (c == '\n')
-		{
-			if (maxLineWidth < currentLineWidth)
-				maxLineWidth = currentLineWidth;
-
-			currentLineWidth = 0;
-		}
-		else
-		{
-			currentLineWidth += m_charWidth[c];
-		}
-	}
-
-	if (maxLineWidth < currentLineWidth)
-		maxLineWidth = currentLineWidth;
-
-	return maxLineWidth;
 }
 
 int Font::width(const std::string& str) const
@@ -1048,6 +1015,50 @@ int Font::width(const std::string& str) const
 		largestWidth = currWidth;
 
 	return largestWidth;
+}
+
+int Font::heightSimple(const std::string& str) const
+{
+	int height = 0;
+
+	int newLines = static_cast<int>(std::count(str.begin(), str.end(), '\n'));
+	height += (newLines + 1) * static_cast<int>(RENDER_GLYPH_SIZE);
+	height += newLines * static_cast<int>(NEW_LINE_SPACING);
+
+	return height;
+}
+
+int Font::widthSimple(const std::string& str) const
+{
+	int maxLineWidth = 0;
+	int currentLineWidth = 0;
+
+	for (size_t i = 0; i < str.size(); i++)
+	{
+		uint8_t c = static_cast<uint8_t>(str[i]);
+
+		if (c == FORMATTING_START_CHARACTER)
+		{
+			// skip format code
+			i++;
+		}
+		else if (c == '\n')
+		{
+			if (maxLineWidth < currentLineWidth)
+				maxLineWidth = currentLineWidth;
+
+			currentLineWidth = 0;
+		}
+		else
+		{
+			currentLineWidth += m_charWidth[c];
+		}
+	}
+
+	if (maxLineWidth < currentLineWidth)
+		maxLineWidth = currentLineWidth;
+
+	return maxLineWidth;
 }
 
 std::vector<std::string> Font::split(const std::string& text, int maxWidth)
@@ -1172,4 +1183,27 @@ const Color& Font::_GetColorFromColorFormatCode(uint8_t c)
 	// TODO: assert index is within size of array
 
 	return COLOR_FROM_CODES[index];
+}
+
+int Font::_CountNewLines(const std::string& str)
+{
+	int count = 0;
+
+	const uint8_t* data = reinterpret_cast<const uint8_t*>(str.c_str());
+	utf8proc_ssize_t len = str.size();
+
+	utf8proc_ssize_t charLen;
+	int c;
+	while ((charLen = utf8proc_iterate(data, len, &c)) > 0)
+	{
+		assert(c >= 0);
+
+		data += charLen;
+		len -= charLen;
+
+		if (c == '\n')
+			count++;
+	}
+
+	return count;
 }
