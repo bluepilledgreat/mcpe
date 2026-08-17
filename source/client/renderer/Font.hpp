@@ -244,14 +244,8 @@ public:
 	virtual void drawScalableShadow(const std::string&, int x, int y, const Color& color, float scale = 2.0f);
 	virtual void drawString(const std::string&, int x, int y, const Color& color, bool hasShadow);
 	void drawOutlinedString(const std::string&, int x, int y, const Color& color, const Color& outlineColor, float scale = 4.0f, int thickness = 2);
-	void drawWordWrap(const std::string&, int x, int y, const Color& color, int width, int lineHeight = 8, bool shadow = false, bool isConsole = false);
-	void drawWordWrap(const std::vector<std::string>&, int x, int y, const Color& color, int lineHeight = 8, bool shadow = false, bool isConsole = false);
-
-	// DEPRECATED
-	void drawString(const std::string& str, int x, int y, const Color& color, bool hasShadow, bool isConsole)
-	{
-		drawString(str, x, y, color, hasShadow);
-	}
+	void drawWordWrap(const std::string&, int x, int y, const Color& color, int width, int lineHeight = 8, bool shadow = false);
+	void drawWordWrap(const std::vector<std::string>&, int x, int y, const Color& color, int lineHeight = 8, bool shadow = false);
 
 	void drawSimple(const std::string&, int x, int y, const Color& color);
 	void drawSimpleShadow(const std::string&, int x, int y, const Color& color);

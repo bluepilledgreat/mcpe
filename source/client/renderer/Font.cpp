@@ -885,16 +885,16 @@ void Font::drawOutlinedString(const std::string& str, int x, int y, const Color&
 	drawScalable(str, x, y, color, scale, false);
 }
 
-void Font::drawWordWrap(const std::string& str, int x, int y, const Color& color, int width, int lineHeight, bool shadow, bool isConsole)
+void Font::drawWordWrap(const std::string& str, int x, int y, const Color& color, int width, int lineHeight, bool shadow)
 {
-	drawWordWrap(split(str, width), x, y, color, lineHeight, shadow, isConsole);
+	drawWordWrap(split(str, width), x, y, color, lineHeight, shadow);
 }
 
-void Font::drawWordWrap(const std::vector<std::string>& lines, int x, int y, const Color& color, int lineHeight, bool shadow, bool isConsole)
+void Font::drawWordWrap(const std::vector<std::string>& lines, int x, int y, const Color& color, int lineHeight, bool shadow)
 {
 	for (std::vector<std::string>::const_iterator it = lines.begin(); it != lines.end(); ++it)
 	{
-		drawString(*it, x, y, color, shadow, isConsole);
+		drawString(*it, x, y, color, shadow);
 		y += lineHeight;
 	}
 }
