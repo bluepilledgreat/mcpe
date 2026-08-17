@@ -234,18 +234,18 @@ public:
 
 	void resetFormat(const Color& baseColor);
 
-	void drawCached(const std::string&, int x, int y, const Color& color, bool isShadow);
-	void drawSimple(const std::string&, int x, int y, const Color& color, bool bShadow);
+	void drawCached(const std::string& str, int x, int y, const Color& color, bool isShadow);
+	void drawSimple(const std::string& str, int x, int y, const Color& color, bool bShadow);
 
-	void draw(const std::string&, int x, int y, const Color& color);
-	void draw(const std::string&, int x, int y, const Color& color, bool bShadow);
-	void drawShadow(const std::string&, int x, int y, const Color& color);
-	void drawScalable(const std::string&, int x, int y, const Color& color, float scale = 2.0f, bool shadow = false);
-	virtual void drawScalableShadow(const std::string&, int x, int y, const Color& color, float scale = 2.0f);
-	virtual void drawString(const std::string&, int x, int y, const Color& color, bool hasShadow);
-	void drawOutlinedString(const std::string&, int x, int y, const Color& color, const Color& outlineColor, float scale = 4.0f, int thickness = 2);
-	void drawWordWrap(const std::string&, int x, int y, const Color& color, int width, int lineHeight = 8, bool shadow = false);
-	void drawWordWrap(const std::vector<std::string>&, int x, int y, const Color& color, int lineHeight = 8, bool shadow = false);
+	void draw(const std::string& str, int x, int y, const Color& color);
+	void draw(const std::string& str, int x, int y, const Color& color, bool bShadow);
+	void drawShadow(const std::string& str, int x, int y, const Color& color);
+	void drawScalable(const std::string& str, int x, int y, const Color& color, float scale = 2.0f, bool shadow = false);
+	virtual void drawScalableShadow(const std::string& str, int x, int y, const Color& color, float scale = 2.0f);
+	virtual void drawString(const std::string& str, int x, int y, const Color& color, bool hasShadow);
+	void drawOutlinedString(const std::string& str, int x, int y, const Color& color, const Color& outlineColor, float scale = 4.0f, int thickness = 2);
+	void drawWordWrap(const std::string& str, int x, int y, const Color& color, int width, int lineHeight = 8, bool shadow = false);
+	void drawWordWrap(const std::vector<std::string>& lines, int x, int y, const Color& color, int lineHeight = 8, bool shadow = false);
 
 	void drawSimple(const std::string&, int x, int y, const Color& color);
 	void drawSimpleShadow(const std::string&, int x, int y, const Color& color);
