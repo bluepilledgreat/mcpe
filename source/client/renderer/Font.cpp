@@ -142,7 +142,7 @@ void Font::TextObjectGroup::_move(TextObjectGroup& other)
 	other.shadow = nullptr;
 }
 
-Font::TextObject& Font::TextObjectGroup::getOrCreate(Font& font, const std::string& str, const Color& color, const Color& finalColor, bool isShadow)
+Font::TextObject& Font::TextObjectGroup::getOrCreate(Font& font, const std::string& str, const Color& color, bool isShadow)
 {
 	if (!requiresSeparateShadowTextObject)
 	{
@@ -156,14 +156,14 @@ Font::TextObject& Font::TextObjectGroup::getOrCreate(Font& font, const std::stri
 		if (isShadow)
 		{
 			if (!shadow)
-				shadow = font._createTextObject(str, finalColor, true);
+				shadow = font._createTextObject(str, color, true);
 
 			return *shadow;
 		}
 		else
 		{
 			if (!base)
-				base = font._createTextObject(str, finalColor, false);
+				base = font._createTextObject(str, color, false);
 
 			return *base;
 		}
@@ -658,7 +658,7 @@ Font::TextObject* Font::_createTextObject(const std::string& str, const Color& c
 	return textObject;
 }
 
-void Font::drawCached(const std::string& str, int x, int y, Color color, bool isShadow)
+void Font::drawCached(const std::string& str, int x, int y, const Color& color, bool isShadow)
 {
 	if (str.empty())
 		return;
@@ -670,11 +670,11 @@ void Font::drawCached(const std::string& str, int x, int y, Color color, bool is
 	else
 		currentShaderDarkColor = Color::WHITE;
 
-	// For hex colors which don't specify an alpha
-	if (color.a == 0.0f)
-		color.a = 1.0f;
-
 	Color finalColor = color;
+	// For hex colors which don't specify an alpha
+	if (finalColor.a == 0.0f)
+		finalColor.a = 1.0f;
+
 #ifndef FEATURE_GFX_SHADERS
 	finalColor *= currentShaderDarkColor;
 #endif
@@ -712,7 +712,7 @@ void Font::drawCached(const std::string& str, int x, int y, Color color, bool is
 			m_recentTextObjectCaches.push_back(key);
 		}
 
-		TextObject& textObject = group->getOrCreate(*this, str, color, finalColor, isShadow);
+		TextObject& textObject = group->getOrCreate(*this, str, finalColor, isShadow);
 
 		float fX = x;
 		float fY = y;

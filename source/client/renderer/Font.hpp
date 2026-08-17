@@ -167,7 +167,7 @@ private:
 		void _move(TextObjectGroup& other);
 
 	public:
-		TextObject& getOrCreate(Font& font, const std::string& str, const Color& color, const Color& finalColor, bool isShadow);
+		TextObject& getOrCreate(Font& font, const std::string& str, const Color& color, bool isShadow);
 		void adjustRenderPosition(float& x, float& y, bool isShadow) const;
 	};
 
@@ -233,7 +233,7 @@ public:
 
 	void resetFormat(const Color& baseColor);
 
-	void drawCached(const std::string&, int x, int y, Color color, bool isShadow);
+	void drawCached(const std::string&, int x, int y, const Color& color, bool isShadow);
 	void drawSimple(const std::string&, int x, int y, const Color& color, bool bShadow);
 
 	void draw(const std::string&, int x, int y, const Color& color);
