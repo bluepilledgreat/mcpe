@@ -957,7 +957,13 @@ bool Font::ContainsUnicodeCharacters(const std::string& str)
 
 int Font::height(const std::string& str)
 {
-	return (std::count(str.begin(), str.end(), '\n') + 1) * static_cast<int>(RENDER_GLYPH_SIZE);
+	int height = 0;
+
+	int newLines = static_cast<int>(std::count(str.begin(), str.end(), '\n'));
+	height += (newLines + 1) * static_cast<int>(RENDER_GLYPH_SIZE);
+	height += newLines * static_cast<int>(NEW_LINE_SPACING);
+
+	return height;
 }
 
 int Font::widthSimple(const std::string& str) const
