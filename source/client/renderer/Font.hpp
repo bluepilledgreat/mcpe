@@ -290,8 +290,7 @@ private:
 	static const Color& _GetColorFromColorFormatCode(uint8_t c);
 
 private:
-	uint8_t m_asciiCharWidth[NUM_ASCII_CHARS];
-	uint8_t m_unicodeCharWidth[NUM_GLYPHS];
+	uint8_t m_charWidth[NUM_GLYPHS];
 	std::vector<GlyphQuad> m_glyphMapQuads[NUM_GLYPHS / COMMON_MAP_TOTAL];
 	std::set<int> m_usedGlyphMapQuads;
 

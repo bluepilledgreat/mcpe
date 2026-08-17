@@ -274,6 +274,7 @@ Font::Font(Options* options, const std::string& fileName, Textures* textures)
 
 void Font::_init(Options* pOpts)
 {
+	memset(m_charWidth, 0, sizeof(m_charWidth));
 	_computeAsciiSizes();
 	_readUnicodeSizes("assets/font/glyphs/glyph_sizes.bin");
 }
@@ -331,24 +332,23 @@ void Font::_computeAsciiSizes()
 			;
 		}
 
-		m_asciiCharWidth[c] = widthMax + SPACING_BETWEEN_CHARS;
+		m_charWidth[c] = widthMax + SPACING_BETWEEN_CHARS;
 	}
 }
 
 void Font::_readUnicodeSizes(const std::string& filePath)
 {
-	memset(m_unicodeCharWidth, 0, sizeof(m_unicodeCharWidth));
-
 	std::string fileData = AppPlatform::singleton()->readAssetFileStr(filePath, false);
 
 	if (fileData.size() != NUM_GLYPHS)
 		throw std::runtime_error("Bad glyph sizes file");
 
-	for (int i = 0; i < NUM_GLYPHS; ++i)
+	// skip all ascii characters as their widths are computed in _computeAsciiSizes
+	for (int i = NUM_ASCII_CHARS; i < NUM_GLYPHS; ++i)
 	{
 		// these widths are for font size 16
 		// we render at font size 8
-		m_unicodeCharWidth[i] = static_cast<uint8_t>(fileData[i] / (COMMON_MAP_DIMENSION / RENDER_GLYPH_SIZE)) + SPACING_BETWEEN_CHARS;
+		m_charWidth[i] = static_cast<uint8_t>(fileData[i] / (COMMON_MAP_DIMENSION / RENDER_GLYPH_SIZE)) + SPACING_BETWEEN_CHARS;
 	}
 }
 
@@ -405,7 +405,7 @@ float Font::_buildChar(int c, float x, float y, const Format& format, bool isSha
 		return static_cast<float>(SPACE_WIDTH);
 
 	bool isAscii = _IsAsciiCharacter(c);
-	float width = static_cast<float>(isAscii ? m_asciiCharWidth[c] : m_unicodeCharWidth[c]);
+	float width = static_cast<float>(m_charWidth[c]);
 
 	int glyphMapId = _GetGlyphMapId(c);
 	std::vector<GlyphQuad>& quads = m_glyphMapQuads[glyphMapId];
@@ -801,7 +801,7 @@ void Font::drawSimple(const std::string& str, int x, int y, const Color& color, 
 
 		_buildCharSimple(x, cXPos, cYPos);
 
-		cXPos += static_cast<float>(m_asciiCharWidth[x]);
+		cXPos += static_cast<float>(m_charWidth[x]);
 	}
 
 	t.draw(m_materials.ui_text);
@@ -992,7 +992,7 @@ int Font::widthSimple(const std::string& str) const
 			currentLineWidth = 0;
 		}
 
-		currentLineWidth += m_asciiCharWidth[uint8_t(str[i])];
+		currentLineWidth += m_charWidth[uint8_t(str[i])];
 	}
 
 	if (maxLineWidth < currentLineWidth)
