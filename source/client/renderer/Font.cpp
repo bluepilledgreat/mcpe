@@ -867,16 +867,16 @@ void Font::drawString(const std::string& str, int x, int y, const Color& color, 
 void Font::drawOutlinedString(const std::string& str, int x, int y, const Color& color, const Color& outlineColor, float scale, int thickness)
 {
 	int translations[] = {0, thickness, -thickness};
-	for (int xi = 0; xi < 3; ++xi)
+	for (int translationX = 0; translationX < ARRAY_SIZE_OF(translations); ++translationX)
 	{
-		int t = translations[xi];
-		for (int yi = 0; yi < 3; ++yi)
+		int xOffset = translations[translationX];
+		for (int translationY = 0; translationY < ARRAY_SIZE_OF(translations); ++translationY)
 		{
-			int t1 = translations[yi];
-			if (t != 0 || t1 != 0)
+			int yOffset = translations[translationY];
+			if (xOffset != 0 || yOffset != 0)
 			{
 				MatrixStack::Ref matrix = MatrixStack::World.push();
-				matrix->translate(Vec3(t, t1, 0));
+				matrix->translate(Vec3(xOffset, yOffset, 0));
 				drawScalable(str, x, y, outlineColor, scale, false);
 			}
 		}
