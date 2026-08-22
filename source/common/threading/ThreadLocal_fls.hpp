@@ -16,10 +16,6 @@ public:
 	typedef T* (*CreatorFunction_t)();
 
 private:
-	DWORD m_key;
-	CreatorFunction_t m_creatorFunction;
-
-private:
 	// disable copy constructors
 	ThreadLocal(const ThreadLocal&);
 	ThreadLocal& operator=(const ThreadLocal&);
@@ -95,4 +91,8 @@ public:
 
 		TlsSetValue(m_key, nullptr);
 	}
+
+private:
+	DWORD m_key;
+	CreatorFunction_t m_creatorFunction;
 };

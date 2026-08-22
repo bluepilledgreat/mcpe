@@ -21,12 +21,6 @@
 class Mutex
 {
 private:
-	CRITICAL_SECTION m_criticalSection;
-#ifdef _MUTEX_DEBUG_RECURSION_DETECTION_
-	DWORD m_owningThreadId;
-#endif
-
-private:
 	// disable copy constructors
 	Mutex(const Mutex&);
 	Mutex& operator=(const Mutex&);
@@ -73,13 +67,16 @@ public:
 
 		LeaveCriticalSection(&m_criticalSection);
 	}
+
+private:
+	CRITICAL_SECTION m_criticalSection;
+#ifdef _MUTEX_DEBUG_RECURSION_DETECTION_
+	DWORD m_owningThreadId;
+#endif
 };
 
 class RecursiveMutex
 {
-private:
-	CRITICAL_SECTION m_criticalSection;
-
 private:
 	// disable copy constructors
 	RecursiveMutex(const RecursiveMutex&);
@@ -106,6 +103,9 @@ public:
 	{
 		LeaveCriticalSection(&m_criticalSection);
 	}
+
+private:
+	CRITICAL_SECTION m_criticalSection;
 };
 
 #ifdef _MUTEX_DEBUG_RECURSION_DETECTION_
