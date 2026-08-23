@@ -33,6 +33,8 @@
     ```
 */
 
+#define MC_SCOPE_CLASS RakNetInstance
+
 RakNetInstance::RakNetInstance()
 {
 	m_bIsHost = false;

@@ -16,6 +16,8 @@
 #include "Lighting.hpp"
 #include "common/profiler/Profiler.hpp"
 
+#define MC_SCOPE_CLASS ItemInHandRenderer
+
 ItemStack ItemInHandRenderer::stick;
 
 ItemInHandRenderer::Materials::Materials()

@@ -49,6 +49,8 @@
 #include "common/profiler/Profiler.hpp"
 #include "client/gui/screens/ProfilerScreen.hpp"
 
+#define MC_SCOPE_CLASS Minecraft
+
 Minecraft* Minecraft::_singletonPtr;
 float Minecraft::_renderScaleMultiplier = 1.0f;
 

@@ -31,6 +31,8 @@
  // in chunks
 #define C_ENTITY_RENDER_DISTANCE 4
 
+#define MC_SCOPE_CLASS LevelRenderer
+
 TerrainLayer renderLayerToTerrainLayerMap[Tile::RENDER_LAYERS_COUNT] = {
 	/*RENDER_LAYER_DOUBLE_SIDED*/               TERRAIN_LAYER_DOUBLE_SIDED,
 	/*RENDER_LAYER_BLEND*/                      TERRAIN_LAYER_BLEND,

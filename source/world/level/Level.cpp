@@ -25,6 +25,8 @@
 #include "Explosion.hpp"
 #include "Region.hpp"
 
+#define MC_SCOPE_CLASS Level
+
 Level::Level(LevelStorage* pStor, const std::string& name, const LevelSettings& settings, int storageVersion, Dimension *pDimension)
 {
 	m_bIsClientSide = false;

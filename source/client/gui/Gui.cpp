@@ -24,6 +24,8 @@
 #pragma warning(disable : 4244)
 #endif
 
+#define MC_SCOPE_CLASS Gui
+
 Gui::Materials::Materials()
 {
 	MATERIAL_PTR(common, ui_vignette);

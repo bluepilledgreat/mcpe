@@ -39,6 +39,8 @@
 #include "world/level/storage/ExternalFileLevelStorageSource.hpp"
 #endif
 
+#define MC_SCOPE_CLASS NinecraftApp
+
 bool NinecraftApp::_hasInitedStatics;
 
 void NinecraftApp::_initResourceLoaders()

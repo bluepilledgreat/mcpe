@@ -32,6 +32,8 @@
 #undef  C_VERTEX_GRAPH_ENABLED
 #endif
 
+#define MC_SCOPE_CLASS GameRenderer
+
 static int t_keepHitResult; // that is its address in v0.1.1j
 
 void GameRenderer::_init()

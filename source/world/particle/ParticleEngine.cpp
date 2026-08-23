@@ -11,6 +11,8 @@
 #include "world/level/TileSource.hpp"
 #include "common/profiler/Profiler.hpp"
 
+#define MC_SCOPE_CLASS ParticleEngine
+
 ParticleEngine::Materials::Materials()
 {
 	MATERIAL_PTR(common, particles_opaque);
