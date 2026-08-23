@@ -33,8 +33,6 @@
     ```
 */
 
-#define MC_SCOPE_CLASS RakNetInstance
-
 RakNetInstance::RakNetInstance()
 {
 	m_bIsHost = false;
@@ -159,7 +157,7 @@ void RakNetInstance::pingForHosts(int port)
 
 void RakNetInstance::runEvents(NetEventCallback& callback)
 {
-	PROFILE_FUNCTION();
+	PROFILE_SCOPE("RakNetInstance::runEvents");
 
 	while (true)
 	{

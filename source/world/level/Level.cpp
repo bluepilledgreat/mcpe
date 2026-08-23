@@ -25,8 +25,6 @@
 #include "Explosion.hpp"
 #include "Region.hpp"
 
-#define MC_SCOPE_CLASS Level
-
 Level::Level(LevelStorage* pStor, const std::string& name, const LevelSettings& settings, int storageVersion, Dimension *pDimension)
 {
 	m_bIsClientSide = false;
@@ -387,7 +385,7 @@ bool Level::hasChunk(const ChunkPos& pos) const
 
 Entity::Vector Level::getEntities(Entity* pEntExclude, const AABB& aabb) const
 {
-	PROFILE_FUNCTION();
+	PROFILE_SCOPE("Level::getEntities");
 
 	Entity::Vector entities;
 
@@ -1783,7 +1781,7 @@ int LASTTICKED = 0;
 
 void Level::tick()
 {
-	PROFILE_FUNCTION();
+	PROFILE_SCOPE("Level::tick");
 
 	m_pMobSpawner->tick(*this, m_difficulty > 0, true);
 	m_pChunkSource->tick();
@@ -1802,7 +1800,7 @@ void Level::tick()
 
 void Level::tickEntities()
 {
-	PROFILE_FUNCTION();
+	PROFILE_SCOPE("Level::tickEntities");
 
 	// inlined in the original
 	removeAllPendingEntityRemovals();

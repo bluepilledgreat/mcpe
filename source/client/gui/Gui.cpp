@@ -24,8 +24,6 @@
 #pragma warning(disable : 4244)
 #endif
 
-#define MC_SCOPE_CLASS Gui
-
 Gui::Materials::Materials()
 {
 	MATERIAL_PTR(common, ui_vignette);
@@ -171,7 +169,7 @@ void Gui::inventoryUpdated()
 
 void Gui::render(float f, bool bHaveScreen)
 {
-	PROFILE_FUNCTION();
+	PROFILE_SCOPE("Gui::render");
 
 	Minecraft& mc = *m_pMinecraft;
 	GameRenderer& renderer = *mc.m_pGameRenderer;

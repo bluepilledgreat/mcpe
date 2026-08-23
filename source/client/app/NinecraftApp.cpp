@@ -39,8 +39,6 @@
 #include "world/level/storage/ExternalFileLevelStorageSource.hpp"
 #endif
 
-#define MC_SCOPE_CLASS NinecraftApp
-
 bool NinecraftApp::_hasInitedStatics;
 
 void NinecraftApp::_initResourceLoaders()
@@ -391,7 +389,7 @@ void NinecraftApp::reloadFancy(bool isFancy)
 
 void NinecraftApp::update()
 {
-	PROFILE_FUNCTION();
+	PROFILE_SCOPE("NinecraftApp::update");
 
 	++m_fps;
 

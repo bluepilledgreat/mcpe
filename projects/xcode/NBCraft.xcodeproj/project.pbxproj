@@ -786,7 +786,6 @@
 		84BF63D32AF186C9008A9995 /* TransparentTile.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 840DD7292AC810620006A435 /* TransparentTile.hpp */; };
 		84BF63D42AF186C9008A9995 /* TreeTile.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 840DD72B2AC810620006A435 /* TreeTile.hpp */; };
 		84BF63D52AF186C9008A9995 /* WireTile.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 840DD72D2AC810620006A435 /* WireTile.hpp */; };
-		84C0D8032B15A1D0007E1E76 /* PlatformDefinitions.h in Headers */ = {isa = PBXBuildFile; fileRef = 84C0D8022B15A1D0007E1E76 /* PlatformDefinitions.h */; };
 		84C614282F323602008AC5BE /* BowItem.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 84C614242F323602008AC5BE /* BowItem.hpp */; };
 		84C614292F323602008AC5BE /* WeaponItem.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 84C614262F323602008AC5BE /* WeaponItem.hpp */; };
 		84C6142A2F323602008AC5BE /* BowItem.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 84C614252F323602008AC5BE /* BowItem.cpp */; };
@@ -1488,8 +1487,6 @@
 		84F66DEA2F18C9DA00DE508E /* GameControllerHandler.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 84F66DE42F18C9DA00DE508E /* GameControllerHandler.hpp */; };
 		84F66DEB2F18C9DA00DE508E /* GameControllerManager.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 84F66DE52F18C9DA00DE508E /* GameControllerManager.cpp */; };
 		84F66DEC2F18C9DA00DE508E /* GameControllerManager.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 84F66DE62F18C9DA00DE508E /* GameControllerManager.hpp */; };
-		84F66DF12F18CA3B00DE508E /* ToolsetDefinitions.h in Headers */ = {isa = PBXBuildFile; fileRef = 84F66DED2F18CA3B00DE508E /* ToolsetDefinitions.h */; };
-		84F66DF22F18CA3B00DE508E /* Unused.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 84F66DEE2F18CA3B00DE508E /* Unused.hpp */; };
 		84F66DF72F18CB3D00DE508E /* MapType.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 84F66DF52F18CB3D00DE508E /* MapType.hpp */; };
 		84F66DF82F18CB3D00DE508E /* VertexField.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 84F66DF62F18CB3D00DE508E /* VertexField.cpp */; };
 		84F77A002EA1BFB40045C907 /* libNetwork.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 842610682AE988D30065905F /* libNetwork.a */; };
@@ -1825,8 +1822,6 @@
 		840823D72F4FF4B80097F6A5 /* CoalItem.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = CoalItem.cpp; sourceTree = "<group>"; };
 		840823D82F4FF4B80097F6A5 /* CoalItem.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = CoalItem.hpp; sourceTree = "<group>"; };
 		840823D92F4FF4B80097F6A5 /* Tool.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = Tool.hpp; sourceTree = "<group>"; };
-		840DD5792AC810620006A435 /* KeyCodes.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = KeyCodes.hpp; sourceTree = "<group>"; };
-		840DD57A2AC810620006A435 /* SDLKeyCodes.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SDLKeyCodes.h; sourceTree = "<group>"; };
 		840DD57E2AC810620006A435 /* App.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = App.cpp; sourceTree = "<group>"; };
 		840DD57F2AC810620006A435 /* App.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = App.hpp; sourceTree = "<group>"; };
 		840DD5802AC810620006A435 /* AppPlatform.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = AppPlatform.cpp; sourceTree = "<group>"; };
@@ -2543,7 +2538,6 @@
 		845BBCB42F2EA81700C7232C /* ToolItem.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = ToolItem.cpp; sourceTree = "<group>"; };
 		84619B3B2AF1FE4C00B0DE81 /* OpenAL.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = OpenAL.framework; path = System/Library/Frameworks/OpenAL.framework; sourceTree = SDKROOT; };
 		84619B3D2AF1FEB700B0DE81 /* QuartzCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = QuartzCore.framework; path = System/Library/Frameworks/QuartzCore.framework; sourceTree = SDKROOT; };
-		8466BD092E774DCD00DDDFC4 /* EndianDefinitions.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = EndianDefinitions.h; sourceTree = "<group>"; };
 		8470AF282BE9B60900BCA54E /* EntityType.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = EntityType.hpp; sourceTree = "<group>"; };
 		8470AF292BE9B60A00BCA54E /* MobFactory.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = MobFactory.cpp; sourceTree = "<group>"; };
 		8470AF2A2BE9B60A00BCA54E /* MobFactory.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = MobFactory.hpp; sourceTree = "<group>"; };
@@ -2759,7 +2753,6 @@
 		84BE45FA30107BC6001C93C6 /* ChunkConstants.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = ChunkConstants.hpp; sourceTree = "<group>"; };
 		84BF630B2AF1859D008A9995 /* libWorld.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libWorld.a; sourceTree = BUILT_PRODUCTS_DIR; };
 		84C0D8002B159A0E007E1E76 /* GlobalSettings.xcconfig */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.xcconfig; name = GlobalSettings.xcconfig; path = Configuration/GlobalSettings.xcconfig; sourceTree = "<group>"; };
-		84C0D8022B15A1D0007E1E76 /* PlatformDefinitions.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = PlatformDefinitions.h; sourceTree = "<group>"; };
 		84C4D86E2A872C0100323E33 /* OpenAL.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = OpenAL.framework; path = System/Library/Frameworks/OpenAL.framework; sourceTree = SDKROOT; };
 		84C614242F323602008AC5BE /* BowItem.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = BowItem.hpp; sourceTree = "<group>"; };
 		84C614252F323602008AC5BE /* BowItem.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = BowItem.cpp; sourceTree = "<group>"; };
@@ -3020,6 +3013,7 @@
 		84E635C82FAF3D9600D2C708 /* VertexBufferStateOGL.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = VertexBufferStateOGL.hpp; sourceTree = "<group>"; };
 		84E635CB2FAF3DCC00D2C708 /* VertexBufferStateNull.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = VertexBufferStateNull.cpp; sourceTree = "<group>"; };
 		84E635CC2FAF3DCC00D2C708 /* VertexBufferStateNull.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = VertexBufferStateNull.hpp; sourceTree = "<group>"; };
+		84E6F0F3303A7680004ECF8A /* compat */ = {isa = PBXFileReference; lastKnownFileType = folder; name = compat; path = ../../compat; sourceTree = "<group>"; };
 		84E78C792B58B3E000D515EF /* Rocket.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Rocket.cpp; sourceTree = "<group>"; };
 		84E78C7A2B58B3E000D515EF /* Rocket.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = Rocket.hpp; sourceTree = "<group>"; };
 		84E78C7D2B58B5CC00D515EF /* RocketRenderer.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = RocketRenderer.cpp; sourceTree = "<group>"; };
@@ -3421,9 +3415,6 @@
 		84ED41462FC3EC730038BAC4 /* ThrownEgg.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = ThrownEgg.hpp; sourceTree = "<group>"; };
 		84ED414B2FC3EC850038BAC4 /* ItemParticle.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = ItemParticle.cpp; sourceTree = "<group>"; };
 		84ED99D42AFF12D1003B6AF0 /* nbcraft.entitlements */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.xml; path = nbcraft.entitlements; sourceTree = "<group>"; };
-		84EDD07A2E76E2B600375AEF /* LegacyCPP.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = LegacyCPP.hpp; sourceTree = "<group>"; };
-		84EDD07B2E76E2B600375AEF /* LegacyCPP_Compat.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = LegacyCPP_Compat.hpp; sourceTree = "<group>"; };
-		84EDD07C2E76E2B600375AEF /* LegacyCPP_Info.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = LegacyCPP_Info.hpp; sourceTree = "<group>"; };
 		84EE49E92F387DBD00677881 /* SliderButton.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = SliderButton.cpp; sourceTree = "<group>"; };
 		84EE49EA2F387DBD00677881 /* SliderButton.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = SliderButton.hpp; sourceTree = "<group>"; };
 		84EE49EB2F387DBD00677881 /* SwitchButton.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = SwitchButton.cpp; sourceTree = "<group>"; };
@@ -3459,8 +3450,6 @@
 		84F66DE42F18C9DA00DE508E /* GameControllerHandler.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = GameControllerHandler.hpp; sourceTree = "<group>"; };
 		84F66DE52F18C9DA00DE508E /* GameControllerManager.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = GameControllerManager.cpp; sourceTree = "<group>"; };
 		84F66DE62F18C9DA00DE508E /* GameControllerManager.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = GameControllerManager.hpp; sourceTree = "<group>"; };
-		84F66DED2F18CA3B00DE508E /* ToolsetDefinitions.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ToolsetDefinitions.h; sourceTree = "<group>"; };
-		84F66DEE2F18CA3B00DE508E /* Unused.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = Unused.hpp; sourceTree = "<group>"; };
 		84F66DF52F18CB3D00DE508E /* MapType.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = MapType.hpp; sourceTree = "<group>"; };
 		84F66DF62F18CB3D00DE508E /* VertexField.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = VertexField.cpp; sourceTree = "<group>"; };
 		84F779FD2EA1BF8E0045C907 /* libServer.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libServer.a; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -3664,23 +3653,6 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
-		840DD5782AC810620006A435 /* compat */ = {
-			isa = PBXGroup;
-			children = (
-				8466BD092E774DCD00DDDFC4 /* EndianDefinitions.h */,
-				840DD5792AC810620006A435 /* KeyCodes.hpp */,
-				84EDD07A2E76E2B600375AEF /* LegacyCPP.hpp */,
-				84EDD07B2E76E2B600375AEF /* LegacyCPP_Compat.hpp */,
-				84EDD07C2E76E2B600375AEF /* LegacyCPP_Info.hpp */,
-				84C0D8022B15A1D0007E1E76 /* PlatformDefinitions.h */,
-				840DD57A2AC810620006A435 /* SDLKeyCodes.h */,
-				84F66DED2F18CA3B00DE508E /* ToolsetDefinitions.h */,
-				84F66DEE2F18CA3B00DE508E /* Unused.hpp */,
-			);
-			name = compat;
-			path = ../../compat;
-			sourceTree = SOURCE_ROOT;
-		};
 		840DD57B2AC810620006A435 /* source */ = {
 			isa = PBXGroup;
 			children = (
@@ -5208,7 +5180,7 @@
 				8489B31E2A86E428004CA8EC /* Frameworks */,
 				8489B0982A86D4B2004CA8EC /* Products */,
 				84D772262EE5180600701DCB /* assets */,
-				840DD5782AC810620006A435 /* compat */,
+				84E6F0F3303A7680004ECF8A /* compat */,
 				840DD9BF2AC810750006A435 /* platforms */,
 				840DD57B2AC810620006A435 /* source */,
 				840DD72E2AC810620006A435 /* thirdparty */,
@@ -6807,13 +6779,11 @@
 			buildActionMask = 2147483647;
 			files = (
 				84D4D00A30318AA6002AC934 /* Rect2D.hpp in Headers */,
-				84F66DF12F18CA3B00DE508E /* ToolsetDefinitions.h in Headers */,
 				84EB0E0E2EE2D4D4008FB007 /* AlignmentHelper.hpp in Headers */,
 				84EB0E112EE2D4D4008FB007 /* JsonParser.hpp in Headers */,
 				84EB0E0F2EE2D4D4008FB007 /* InheritanceTree.hpp in Headers */,
 				8406FD332AF1823600B09C1D /* Logger.hpp in Headers */,
 				8406FD362AF1823600B09C1D /* Mth.hpp in Headers */,
-				84F66DF22F18CA3B00DE508E /* Unused.hpp in Headers */,
 				8406FD372AF1823600B09C1D /* Random.hpp in Headers */,
 				84EB0E0C2EE2D4CA008FB007 /* Color.hpp in Headers */,
 				84BE45F730107B90001C93C6 /* MovePriorityQueue.hpp in Headers */,
@@ -6838,7 +6808,6 @@
 				84E001B92AF3A3CB009B9555 /* SmoothFloat.hpp in Headers */,
 				84F412B63031864100C2846A /* CThread_base.hpp in Headers */,
 				84D4D01930318AF8002AC934 /* Mutex_pthread.hpp in Headers */,
-				84C0D8032B15A1D0007E1E76 /* PlatformDefinitions.h in Headers */,
 				84D4D00B30318AA6002AC934 /* Vector2.hpp in Headers */,
 				84DEAB552F8CBB0D00BD9701 /* ByteBuffer.hpp in Headers */,
 			);

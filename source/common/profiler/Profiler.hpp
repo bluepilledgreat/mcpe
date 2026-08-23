@@ -5,7 +5,6 @@
 #include <vector>
 #include <stack>
 #include <list>
-#include "compat/ScopeContext.hpp"
 #include "common/threading/CThread.hpp"
 #include "common/threading/ThreadLocal.hpp"
 #include "common/threading/Mutex.hpp"
@@ -219,5 +218,5 @@ public:
 
 extern ThreadLocal<ProfilerContextRoot> ProfilerThreadContext;
 
-#define PROFILE_FUNCTION() ProfilerMarker _profiler_function_marker_(MC_SCOPE_FUNC)
-//#define PROFILE_FUNCTION() 
+#define PROFILE_SCOPE(markerName) ProfilerMarker _profiler_function_marker_ = ProfilerMarker(markerName)
+//#define PROFILE_SCOPE(markerName)

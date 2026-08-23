@@ -7,9 +7,9 @@
 
 //#define PROFILE_OURSELVES
 #ifdef PROFILE_OURSELVES
-#define PROFILE_MYSELF PROFILE_FUNCTION // me when i profile myself
+#define PROFILE_MYSELF(markerName) PROFILE_SCOPE(markerName) // me when i profile myself
 #else
-#define PROFILE_MYSELF()
+#define PROFILE_MYSELF(markerName)
 #endif
 
 const double INTERVAL_BETWEEN_REBUILDS = 0.1;
@@ -124,7 +124,7 @@ private:
 
 	void renderText(Font& font, const std::string& text, const Rect2DI& rect, float scale)
 	{
-		PROFILE_MYSELF();
+		PROFILE_MYSELF("ProfilerFlameGraphRow::renderText");
 
 		if (text.empty())
 			return;
@@ -149,7 +149,7 @@ private:
 
 	void renderTooltip(Minecraft* minecraft, const std::string& text, const Vector2I& pointerPos)
 	{
-		PROFILE_MYSELF();
+		PROFILE_MYSELF("ProfilerFlameGraphRow::renderTooltip");
 
 		const int TOOLTIP_PADDING = 3; // Padding on each side of the tooltip
 		const int TEXT_X_OFFSET = 8; // Text offset from mouse on the X dimension
@@ -296,7 +296,7 @@ public:
 
 	void renderHovering(Minecraft* pMinecraft, const Vector2I& pointerPos)
 	{
-		PROFILE_MYSELF();
+		PROFILE_MYSELF("ProfilerFlameGraphRow::renderHovering");
 
 		renderTooltip(pMinecraft, m_name, pointerPos);
 	}
@@ -322,7 +322,7 @@ public:
 public:
 	void render(Minecraft* pMinecraft, const MenuPointer& pointer)
 	{
-		PROFILE_MYSELF();
+		PROFILE_MYSELF("ProfilerFlameGraph::render");
 
 		ProfilerFlameGraphRow* hoveringElement = nullptr;
 
@@ -548,7 +548,7 @@ void ProfilerRenderer::renderFlameGraphUI(const MenuPointer& pointer)
 
 void ProfilerRenderer::step()
 {
-	PROFILE_MYSELF();
+	PROFILE_MYSELF("ProfilerRenderer::step");
 
 	if (getTimeS() > m_lastRebuild + INTERVAL_BETWEEN_REBUILDS)
 	{
@@ -560,7 +560,7 @@ void ProfilerRenderer::step()
 
 void ProfilerRenderer::render(const MenuPointer& pointer)
 {
-	PROFILE_MYSELF();
+	PROFILE_MYSELF("ProfilerRenderer::render");
 
 	updateContainerPosition();
 	renderFlameGraphUI(pointer);

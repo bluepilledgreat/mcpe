@@ -11,8 +11,6 @@
 #include "world/level/TileSource.hpp"
 #include "common/profiler/Profiler.hpp"
 
-#define MC_SCOPE_CLASS ParticleEngine
-
 ParticleEngine::Materials::Materials()
 {
 	MATERIAL_PTR(common, particles_opaque);
@@ -196,7 +194,7 @@ void ParticleEngine::render(const Entity& camera, float f)
 
 void ParticleEngine::renderLit(const Entity& camera, float a)
 {
-	PROFILE_FUNCTION();
+	PROFILE_SCOPE("ParticleEngine::renderLit");
 
 	int tt = 3;
 	if (m_particles[tt].size() != 0)

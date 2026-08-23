@@ -31,8 +31,6 @@
  // in chunks
 #define C_ENTITY_RENDER_DISTANCE 4
 
-#define MC_SCOPE_CLASS LevelRenderer
-
 TerrainLayer renderLayerToTerrainLayerMap[Tile::RENDER_LAYERS_COUNT] = {
 	/*RENDER_LAYER_DOUBLE_SIDED*/               TERRAIN_LAYER_DOUBLE_SIDED,
 	/*RENDER_LAYER_BLEND*/                      TERRAIN_LAYER_BLEND,
@@ -423,7 +421,7 @@ void LevelRenderer::_recreateTessellators()
 
 void LevelRenderer::_setupFog(const Entity& camera, int i)
 {
-	PROFILE_FUNCTION();
+	PROFILE_SCOPE("LevelRenderer::_setupFog");
 
 #ifdef FEATURE_GFX_SHADERS
 	if (i != 1)
@@ -493,7 +491,7 @@ void LevelRenderer::_updateViewArea(const Entity& camera)
 
 void LevelRenderer::_startFrame(FrustumCuller& culler, float renderDistance, float f)
 {
-	PROFILE_FUNCTION();
+	PROFILE_SCOPE("LevelRenderer::_startFrame");
 
 	const Entity& camera = *m_pMinecraft->m_pCameraEntity;
 	m_viewPos = camera.getInterpolatedPosition(f);
@@ -591,7 +589,7 @@ void LevelRenderer::deleteChunks()
 
 void LevelRenderer::cull(Culler* pCuller, float f)
 {
-	PROFILE_FUNCTION();
+	PROFILE_SCOPE("LevelRenderer::cull");
 
 	for (int i = 0; i < m_chunksLength; i++)
 	{
@@ -903,7 +901,7 @@ int LevelRenderer::renderChunks(int start, int end, Tile::RenderLayer layer, flo
 
 void LevelRenderer::render(const Entity& camera, Tile::RenderLayer layer, float alpha, bool fog)
 {
-	PROFILE_FUNCTION();
+	PROFILE_SCOPE("LevelRenderer::render");
 
 	for (int i = 0; i < 10; i++)
 	{
@@ -1144,7 +1142,7 @@ void LevelRenderer::setTilesDirty(const TilePos& min, const TilePos& max)
 
 void LevelRenderer::tick()
 {
-	PROFILE_FUNCTION();
+	PROFILE_SCOPE("LevelRenderer::tick");
 
 	const Entity* pCamera = m_pMinecraft->m_pCameraEntity;
 	if (!pCamera)
@@ -1171,7 +1169,7 @@ typedef ChunkVector::iterator ChunkVectorIterator;
 
 bool LevelRenderer::updateDirtyChunks(const Entity& camera, bool force)
 {
-	PROFILE_FUNCTION();
+	PROFILE_SCOPE("LevelRenderer::updateDirtyChunks");
 
 	constexpr int C_MAX = 3;
 	DirtyChunkSorter dcs(camera);
@@ -1281,7 +1279,7 @@ bool LevelRenderer::updateDirtyChunks(const Entity& camera, bool force)
 
 void LevelRenderer::renderCracks(const Entity& camera, const HitResult& hr, int mode, const ItemStack* inventoryItem, float a)
 {
-	PROFILE_FUNCTION();
+	PROFILE_SCOPE("LevelRenderer::renderCracks");
 
 	TileSource& tileSource = camera.getTileSource();
 
@@ -1328,7 +1326,7 @@ void LevelRenderer::renderCracks(const Entity& camera, const HitResult& hr, int 
 
 void LevelRenderer::renderHitSelect(const Entity& camera, const HitResult& hr, int mode, const ItemStack* inventoryItem, float a)
 {
-	PROFILE_FUNCTION();
+	PROFILE_SCOPE("LevelRenderer::renderHitSelect");
 
 	if (mode != 0) return;
 
@@ -1368,7 +1366,7 @@ void LevelRenderer::renderHitSelect(const Entity& camera, const HitResult& hr, i
 
 void LevelRenderer::renderHitOutline(const Entity& camera, const HitResult& hr, int mode, const ItemStack* inventoryItem, float a)
 {
-	PROFILE_FUNCTION();
+	PROFILE_SCOPE("LevelRenderer::renderHitOutline");
 
 	if (mode != 0 || hr.m_hitType != 0)
 		return;
@@ -1562,7 +1560,7 @@ void LevelRenderer::playSound(const std::string& name, const Vec3& pos, float vo
 
 void LevelRenderer::renderLevel(const Entity& camera, FrustumCuller& culler, float renderDistance, float f)
 {
-	PROFILE_FUNCTION();
+	PROFILE_SCOPE("LevelRenderer::renderLevel");
 
 	if (!m_pLevel)
 		return;
@@ -1646,7 +1644,7 @@ AABB _getEntityRenderBounds(const Mob& camera)
 
 void LevelRenderer::renderEntities(Vec3 pos, Culler* culler, float f)
 {
-	PROFILE_FUNCTION();
+	PROFILE_SCOPE("LevelRenderer::renderEntities");
 
 	if (m_noEntityRenderFrames > 0)
 	{
@@ -1741,7 +1739,7 @@ void LevelRenderer::renderShadow(const Entity& entity, const Vec3& pos, float r,
 
 void LevelRenderer::renderSky(const Entity& camera, float alpha)
 {
-	PROFILE_FUNCTION();
+	PROFILE_SCOPE("LevelRenderer::renderSky");
 
 	if (m_pDimension->isFoggy())
 		return;
@@ -1785,7 +1783,7 @@ void LevelRenderer::renderSky(const Entity& camera, float alpha)
 
 void LevelRenderer::prepareAndRenderClouds(const Entity& camera, float f)
 {
-	PROFILE_FUNCTION();
+	PROFILE_SCOPE("LevelRenderer::prepareAndRenderClouds");
 
 	if (!m_pMinecraft->getOptions()->m_fancySky.get())
 		return;
@@ -1824,7 +1822,7 @@ void LevelRenderer::prepareAndRenderClouds(const Entity& camera, float f)
 
 void LevelRenderer::renderClouds(const Entity& camera, float alpha)
 {
-	PROFILE_FUNCTION();
+	PROFILE_SCOPE("LevelRenderer::renderClouds");
 
 	if (!areCloudsAvailable())
 		return;
@@ -1898,7 +1896,7 @@ void LevelRenderer::renderClouds(const Entity& camera, float alpha)
 
 void LevelRenderer::renderAdvancedClouds(float alpha)
 {
-	PROFILE_FUNCTION();
+	PROFILE_SCOPE("LevelRenderer::renderAdvancedClouds");
 
 	Minecraft& mc = *m_pMinecraft;
 	Options& options = *mc.getOptions();

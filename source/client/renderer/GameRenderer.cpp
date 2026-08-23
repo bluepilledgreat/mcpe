@@ -32,8 +32,6 @@
 #undef  C_VERTEX_GRAPH_ENABLED
 #endif
 
-#define MC_SCOPE_CLASS GameRenderer
-
 static int t_keepHitResult; // that is its address in v0.1.1j
 
 void GameRenderer::_init()
@@ -136,7 +134,7 @@ void GameRenderer::_clearFrameBuffer()
 
 void GameRenderer::_renderItemInHand(float f, int i)
 {
-	PROFILE_FUNCTION();
+	PROFILE_SCOPE("GameRenderer::_renderItemInHand");
 
 #ifdef ENH_FOV_MODIFIER
 	MatrixStack::Ref projRef = MatrixStack::Projection.pushIdentity();
@@ -191,7 +189,7 @@ void GameRenderer::_renderItemInHand(float f, int i)
 
 void GameRenderer::_renderDebugOverlay(float a)
 {
-	PROFILE_FUNCTION();
+	PROFILE_SCOPE("GameRenderer::_renderDebugOverlay");
 
 	Font& font = *m_pMinecraft->m_pFont;
 
@@ -307,7 +305,7 @@ void GameRenderer::unZoomRegion()
 
 void GameRenderer::setupCamera(float f, int i)
 {
-	PROFILE_FUNCTION();
+	PROFILE_SCOPE("GameRenderer::setupCamera");
 
 	m_renderDistance = float(256 >> (3 - m_pMinecraft->getOptions()->m_viewDistance.get()));
 
@@ -454,7 +452,7 @@ void GameRenderer::setupGuiScreen()
 
 void GameRenderer::bobHurt(Matrix& matrix, float f)
 {
-	PROFILE_FUNCTION();
+	PROFILE_SCOPE("GameRenderer::bobHurt");
 
 	Mob* pMob = m_pMinecraft->m_pCameraEntity;
 
@@ -534,7 +532,7 @@ float GameRenderer::getFov(float f, bool applyFovMod)
 
 void GameRenderer::renderLevel(float f)
 {
-	PROFILE_FUNCTION();
+	PROFILE_SCOPE("GameRenderer::renderLevel");
 
 	if (!m_pLevel)
 		return;
@@ -607,7 +605,7 @@ void GameRenderer::renderLevel(float f)
 
 void GameRenderer::renderFramedItems(const Vec3& camPos, LevelRenderer& levelRenderer, const Entity& camera, float f, ParticleEngine& particleEngine, float i)
 {
-	PROFILE_FUNCTION();
+	PROFILE_SCOPE("GameRenderer::renderFramedItems");
 
 	if (m_pMinecraft->getOptions()->m_ambientOcclusion.get())
 	{
@@ -644,7 +642,7 @@ void GameRenderer::renderFramedItems(const Vec3& camPos, LevelRenderer& levelRen
 
 void GameRenderer::render(const Timer& timer)
 {
-	PROFILE_FUNCTION();
+	PROFILE_SCOPE("GameRenderer::render");
 
 	if (m_pMinecraft->m_pLocalPlayer && m_pMinecraft->m_bGrabbedMouse)
 	{
@@ -808,7 +806,7 @@ void GameRenderer::render(const Timer& timer)
 
 void GameRenderer::tick()
 {
-	PROFILE_FUNCTION();
+	PROFILE_SCOPE("GameRenderer::tick");
 
 	// Prevents underflow
 	if (m_keepPic > -100)

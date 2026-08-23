@@ -10,8 +10,6 @@
 #pragma warning (disable : 4244)
 #endif
 
-#define MC_SCOPE_CLASS ScreenRenderer
-
 std::string ScreenRenderer::PANEL_SLICES[] = { "gui/console/Graphics/Panel_TL.png", "gui/console/Graphics/Panel_TM.png", "gui/console/Graphics/Panel_TR.png",
                                                "gui/console/Graphics/Panel_ML.png", "gui/console/Graphics/Panel_MM.png", "gui/console/Graphics/Panel_MR.png",
                                                "gui/console/Graphics/Panel_BL.png", "gui/console/Graphics/Panel_BM.png", "gui/console/Graphics/Panel_BR.png" };
@@ -283,7 +281,7 @@ void ScreenRenderer::drawScaledStringNoShadows(Font& font, const std::string& st
 
 void ScreenRenderer::fill(const Rect2DI& rect, const Color& color)
 {
-    PROFILE_FUNCTION();
+    PROFILE_SCOPE("ScreenRenderer::fill");
 
     currentShaderColor = color;
 

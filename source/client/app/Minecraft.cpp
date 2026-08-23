@@ -49,8 +49,6 @@
 #include "common/profiler/Profiler.hpp"
 #include "client/gui/screens/ProfilerScreen.hpp"
 
-#define MC_SCOPE_CLASS Minecraft
-
 Minecraft* Minecraft::_singletonPtr;
 float Minecraft::_renderScaleMultiplier = 1.0f;
 
@@ -961,7 +959,7 @@ std::string Minecraft::getVersionString(const std::string& str) const
 
 void Minecraft::tick()
 {
-	PROFILE_FUNCTION();
+	PROFILE_SCOPE("Minecraft::tick");
 
 	if (m_bPendingResize)
 	{
@@ -1044,7 +1042,7 @@ void Minecraft::tick()
 
 void Minecraft::update()
 {
-	PROFILE_FUNCTION();
+	PROFILE_SCOPE("Minecraft::update");
 
 	m_timer.advanceTime(isGamePaused() && m_pLevel);
 
