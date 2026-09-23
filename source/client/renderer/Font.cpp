@@ -4,7 +4,7 @@
 #include "common/utility/hashing/HashCombine.hpp"
 #include "common/Util.hpp"
 #include <sstream>
-#include <utf8proc.h>
+#include "thirdparty/utf8proc/utf8proc.h"
 
 static const Color COLOR_FROM_CODES[] = {
 	Color::FromRGB(0, 0, 0),       // 0 - black
