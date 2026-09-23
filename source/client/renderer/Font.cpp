@@ -702,6 +702,7 @@ void Font::drawCached(const std::string& str, int x, int y, const Color& color, 
 
 		if (!group)
 		{
+			(void)isInCache;
 			assert(!isInCache);
 
 			if (m_recentTextObjectCaches.size() > C_MAX_CACHE_SIZE)
