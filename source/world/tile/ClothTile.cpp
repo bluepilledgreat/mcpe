@@ -26,7 +26,7 @@ int ClothTile::getTexture(Facing::Name face, TileData data) const
 	}
 }
 
-int ClothTile::getSpawnResourcesAuxValue(int val) const
+int ClothTile::getSpawnResourcesAuxValue(int auxValue) const
 {
-	return val;
+	return auxValue;
 }

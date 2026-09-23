@@ -117,11 +117,9 @@ void MobRenderer::render(const Entity& entity, const Vec3& pos, float rot, float
 			x1 = 1.0f;
 		float x2 = mob.m_walkAnimPos - mob.m_walkAnimSpeed * (1.0f - a);
 
-		_setupShaderParameters(entity, a);
-
 		bindTexture(mob.getTexture());
 
-		m_pModel->setBrightness(entity.getBrightness(1.0f));
+		m_pModel->setBrightness(entity.getBrightness(1.0f)); // does practically nothing
 		m_pModel->prepareMobModel(mob, x2, x1, a);
 		m_pModel->render(x2, x1, fBob, aYaw - fSmth, aPitch, fScale);
 
@@ -135,6 +133,9 @@ void MobRenderer::render(const Entity& entity, const Vec3& pos, float rot, float
 
 		additionalRendering(mob, a);
 
+		// This is the only way to do overlay colors in FFP OpenGL afaik
+		// With shaders, we get per-pixel blending on a single mesh, not with FFP
+#ifndef FEATURE_GFX_SHADERS
 		Color overlayColor = getOverlayColor(mob, a);
 		if (overlayColor.a > 0.0f)
 		{
@@ -142,7 +143,7 @@ void MobRenderer::render(const Entity& entity, const Vec3& pos, float rot, float
 			mce::MaterialPtr* pMaterial = m_pModel->m_pMaterial;
 			m_pModel->m_pMaterial = &m_pModel->m_materials.entity_color_overlay;
 
-			m_pModel->render(x2, x1, fBob, aYaw - fSmth, aPitch, fScale); // same here
+			m_pModel->render(x2, x1, fBob, aYaw - fSmth, aPitch, fScale);
 
 			for (int i = 0; i < 4; i++)
 			{
@@ -151,7 +152,6 @@ void MobRenderer::render(const Entity& entity, const Vec3& pos, float rot, float
 					mce::MaterialPtr* pMaterial = m_pArmorModel->m_pMaterial;
 					m_pArmorModel->m_pMaterial = &m_pArmorModel->m_materials.entity_color_overlay;
 
-					currentShaderColor = overlayColor;
 					m_pArmorModel->render(x2, x1, fBob, aYaw - fSmth, aPitch, fScale);
 
 					m_pArmorModel->m_pMaterial = pMaterial;
@@ -160,6 +160,7 @@ void MobRenderer::render(const Entity& entity, const Vec3& pos, float rot, float
 
 			m_pModel->m_pMaterial = pMaterial;
 		}
+#endif
 	}
 	renderName(mob, pos);
 }
@@ -181,7 +182,7 @@ void MobRenderer::renderName(const Mob& mob, const Vec3& pos)
 		const Player& player = (const Player&)mob;
 
 		// @TODO: don't know why but I have to add this correction. look into it and fix it!
-		renderNameTag(mob, player.m_name, Vec3(pos.x, pos.y - 1.5f, pos.z), mob.isSneaking() ? 32 : 64);
+		renderNameTag(mob, player.getName(), Vec3(pos.x, pos.y - 1.5f, pos.z), mob.isSneaking() ? 32 : 64, player.m_color);
 	}
 	else
 	{
@@ -192,7 +193,7 @@ void MobRenderer::renderName(const Mob& mob, const Vec3& pos)
 	}
 }
 
-void MobRenderer::renderNameTag(const Mob& mob, const std::string& str, const Vec3& pos, int a)
+void MobRenderer::renderNameTag(const Mob& mob, const std::string& str, const Vec3& pos, int a, const Color& outlineColor)
 {
 	if (mob.distanceToSqr(m_pDispatcher->m_pCamera) > float(a * a))
 		return;
@@ -217,24 +218,24 @@ void MobRenderer::renderNameTag(const Mob& mob, const std::string& str, const Ve
 	float widthHalf = float(width / 2);
 
 	t.normal(Vec3::UNIT_Y);
-	t.vertex(-1.0f - widthHalf, -1.0f, 0.0f);
-	t.vertex(-1.0f - widthHalf, 8.0f, 0.0f);
-	t.vertex(widthHalf + 1.0f, 8.0f, 0.0f);
-	t.vertex(widthHalf + 1.0f, -1.0f, 0.0f);
+	t.vertex(-widthHalf - 1.0f, -1.0f, 0.0f);
+	t.vertex(-widthHalf - 1.0f,  8.0f, 0.0f);
+	t.vertex( widthHalf + 1.0f,  8.0f, 0.0f);
+	t.vertex( widthHalf + 1.0f, -1.0f, 0.0f);
 	t.draw(m_materials.name_tag);
 
 	// @TODO: Come back here after implementing line width setting support in HAL.
 
 	if (options.getUiTheme() == UI_CONSOLE)
 	{
-		currentShaderColor = Color::GREEN; // @TODO: Currently hardcoded to green, but should be changed to use different colors for players like in Xbox 360 Edition.
+		currentShaderColor = outlineColor;
 		t.begin(mce::PRIMITIVE_MODE_LINE_STRIP, 5);
 
-		t.vertex(-1.0f - widthHalf, -1.0f, 0.0f);
-		t.vertex(-1.0f - widthHalf, 8.0f, 0.0f);
-		t.vertex(widthHalf + 1.0f, 8.0f, 0.0f);
-		t.vertex(widthHalf + 1.0f, -1.0f, 0.0f);
-		t.vertex(-1.0f - widthHalf, -1.0f, 0.0f);
+		t.vertex(-widthHalf - 1.0f, -1.0f, 0.0f);
+		t.vertex(-widthHalf - 1.0f,  8.0f, 0.0f);
+		t.vertex( widthHalf + 1.0f,  8.0f, 0.0f);
+		t.vertex( widthHalf + 1.0f, -1.0f, 0.0f);
+		t.vertex(-widthHalf - 1.0f, -1.0f, 0.0f);
 		t.draw(m_materials.name_tag);
 	}
 

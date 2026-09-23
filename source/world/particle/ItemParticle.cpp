@@ -3,7 +3,7 @@
 ItemParticle::ItemParticle(TileSource& tileSource, const Vec3& pos, const Item* item)
 	: Particle(tileSource, pos, Vec3::ZERO)
 {
-	m_tex = item->getIcon(0);
+	m_tex = item->getIcon();
     m_gravity = Tile::snow->m_gravity;
 	m_size /= 2.0f;
 }

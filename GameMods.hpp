@@ -30,7 +30,6 @@
 
 // Enhancements (minor changes)
 //#define ENH_ENTITY_SHADING      	       // Allows shading of entities -- Currently we are abandoning this. Want to add normal support
-#define ENH_SHADE_HELD_TILES    	       // Allows shading of the item in hand
 #define ENH_FIX_INVIS_STAIRS    	       // Fixes a bug wherein a 16x16x16 chunk in the world that contains only stairs is invisible
 #define ENH_ALLOW_AO_TOGGLE                // Allows using the F4 key to toggle ambient occlusion (buggy)
 #define ENH_TRANSPARENT_HOTBAR  	       // Allows the hotbar to be transparent. Due to a bug in the code, it is not.
@@ -41,7 +40,7 @@
 #define ENH_ADD_OPTIONS_PAUSE    	       // Add an 'options' button in the pause menu
 #define ENH_ALLOW_SAND_GRAVITY  	       // Allow sand to fall.
 #define ENH_ALLOW_SCROLL_WHEEL  	       // Allow use of the scroll wheel to change selected inventory slots
-#define ENH_3D_INVENTORY_TILES  	       // Uses 3D rendered inventory tiles, use with ENH_SHADE_HELD_TILES to render correctly.
+#define ENH_3D_INVENTORY_TILES  	       // Uses 3D rendered inventory tiles
 #define ENH_MENU_BACKGROUND 		       // Renders a spinning panorama (if it's available) in the background of the main menu
 #define ENH_GUI_ITEM_POP 	               // Calls Inventory::tick() to create the "pop" animation for items that enter the hotbar. This function was not present on Pocket Edition.
 #define ENH_NEW_TOUCH_CONTROLS 	           // Use the new touch controls based off 0.12.1 alpha.
@@ -55,6 +54,7 @@
 //#define ENH_NEWER_CONSOLE_ITEM_LIGHTING  // Makes the Console UI tile items lighting based on Title Update 5
 #define ENH_NEW_FEEDBACK_INDICATOR 	       // Use the new mesh-based interaction feedback indicator.
 #define ENH_FOV_MODIFIER 	               // Smooth FOV modifier - provides flying FOV boost and adjustable FOV slider
+#define ENH_SPAWN_EGGS                     // Adds spawn eggs to the Creative inventory for spawning mobs
 
 // TODO: Implement this permanently?
 #define ENH_IMPROVED_SAVING     	       // Improve world saving. The original Minecraft doesn't always really save for some reason

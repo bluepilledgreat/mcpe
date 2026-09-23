@@ -200,7 +200,7 @@ void PatchManager::PatchTiles()
 
 		if (Item::items[pd.m_destID])
 		{
-			Item::items[pd.m_destID]->m_icon = pd.m_frameNo;
+			Item::items[pd.m_destID]->setIcon(pd.m_frameNo);
 			continue;
 		}
 

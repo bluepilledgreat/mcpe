@@ -17,7 +17,7 @@ TileItem::TileItem(int id) : Item(id)
 {
 	id += 256;
 	m_tile = id;
-	m_icon = Tile::tiles[id]->getTexture(Facing::NORTH);
+	setIcon(Tile::tiles[id]->getTexture(Facing::NORTH));
 }
 
 std::string TileItem::getDescriptionId() const
@@ -76,8 +76,9 @@ bool TileItem::useOn(ItemStack& itemStack, Player& player, const TilePos& pos, F
 	return true;
 }
 
-Color TileItem::getColor(int data) const
+Color TileItem::getColor(const ItemStack* itemStack, int layer) const
 {
+	int auxValue = itemStack ? itemStack->getAuxValue() : 0;
 	//@NOTE: Used by tiles rendered as 2d items
-	return Tile::tiles[m_tile]->getColor(Facing::UP, data);
+	return Tile::tiles[m_tile]->getColor(Facing::UP, auxValue);
 }

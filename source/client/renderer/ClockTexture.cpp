@@ -3,7 +3,7 @@
 #include "client/app/Minecraft.hpp"
 
 ClockTexture::ClockTexture(Minecraft* minecraft)
-    : DynamicTexture(Item::clock->m_icon)
+    : DynamicTexture(Item::clock->getIcon())
     , m_pMinecraft(minecraft)
     , m_rot(0)
     , m_rota(0)

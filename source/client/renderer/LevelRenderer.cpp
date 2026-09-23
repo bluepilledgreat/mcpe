@@ -820,7 +820,7 @@ void LevelRenderer::renderLineBox(const AABB& aabb, const mce::MaterialPtr& mate
 	t.vertex(aabb.min.x, aabb.max.y, aabb.max.z);
 	t.vertex(aabb.min.x, aabb.max.y, aabb.min.z);
 	t.draw(material);
-	t.begin(mce::PRIMITIVE_MODE_LINE_LIST, 5);
+	t.begin(mce::PRIMITIVE_MODE_LINE_LIST, 8);
 	t.vertex(aabb.min.x, aabb.min.y, aabb.min.z);
 	t.vertex(aabb.min.x, aabb.max.y, aabb.min.z);
 	t.vertex(aabb.max.x, aabb.min.y, aabb.min.z);
@@ -1168,32 +1168,31 @@ bool LevelRenderer::updateDirtyChunks(const Entity& camera, bool force)
 	for (size_t i = 0; i < pendingChunkSize; i++)
 	{
 		Chunk* pChunk = m_dirtyChunks[i];
-		if (!force)
-		{
-			if (pChunk->distanceToSqr(camera) > 1024.0f)
-			{
-				int j;
-				// find place to insert this chunk within the pChunks array
-				for (j = 0; j < C_MAX; j++)
-				{
-					if (pChunks[j] && !dcs(pChunks[j], pChunk))
-						break;
-				}
-				// insert it
-				if (--j <= 0)
-					continue;
-				
-				for (int k = j; --k != 0;)
-				{
-					pChunks[k - 1] = pChunks[k];
-				}
 
-				pChunks[j] = pChunk;
-				continue;
-			}
-		}
-		else if (!pChunk->m_bVisible)
+		if (!force && !pChunk->m_bVisible)
 		{
+			continue;
+		}
+
+		if (pChunk->distanceToSqr(camera) > 1024.0f)
+		{
+			int j;
+			// find place to insert this chunk within the pChunks array
+			for (j = 0; j < C_MAX; j++)
+			{
+				if (pChunks[j] && !dcs(pChunks[j], pChunk))
+					break;
+			}
+			// insert it
+			if (--j <= 0)
+				continue;
+				
+			for (int k = 0; k < j; k++)
+			{
+				pChunks[k] = pChunks[k + 1];
+			}
+
+			pChunks[j] = pChunk;
 			continue;
 		}
 
@@ -1229,7 +1228,7 @@ bool LevelRenderer::updateDirtyChunks(const Entity& camera, bool force)
 		{
 			pChunks[m] = nullptr;
 			pChunks[0] = nullptr;
-			break;
+			continue;
 		}
 
 		pChunks[m]->rebuild();
@@ -1278,8 +1277,7 @@ void LevelRenderer::renderCracks(const Entity& camera, const HitResult& hr, int 
 		if (m_destroyProgress > 0.0f)
 		{
 			m_pTextures->loadAndBindTexture(C_TERRAIN_NAME);
-			currentShaderColor = Color::WHITE;
-			currentShaderDarkColor = Color(1.0f, 1.0f, 1.0f, 0.5f);
+			currentShaderColor = Color(1.0f, 1.0f, 1.0f, 0.5f);
 
 			MatrixStack::Ref matrix = MatrixStack::World.push();
 
@@ -1325,7 +1323,6 @@ void LevelRenderer::renderHitSelect(const Entity& camera, const HitResult& hr, i
 		pTile = Tile::tiles[tileID];
 
 	currentShaderColor = Color(0.65f, 0.65f, 0.65f, 0.65f);
-	currentShaderDarkColor = Color::WHITE;
 
 	MatrixStack::Ref matrix = MatrixStack::World.push();
 
@@ -1357,7 +1354,6 @@ void LevelRenderer::renderHitOutline(const Entity& camera, const HitResult& hr, 
 	TileSource& tileSource = camera.getTileSource();
 
 	currentShaderColor = Color(0.0f, 0.0f, 0.0f, 0.4f);
-	currentShaderDarkColor = Color::WHITE;
 
 	constexpr float distance = 0.002f;
 	float lineWidth = 2.0f * Minecraft::GetRenderScaleMultiplier();
@@ -1693,7 +1689,7 @@ void LevelRenderer::renderShadow(const Entity& entity, const Vec3& pos, float r,
 	Vec3 ePosO(pos - ePos);
 
 	Tesselator& tt = Tesselator::instance;
-	tt.begin(0);
+	tt.begin(36);
 	TilePos tp(tpMin);
 	for (tp.x = tpMin.x; tp.x <= tpMax.x; tp.x++)
 	{
@@ -1903,7 +1899,6 @@ void LevelRenderer::renderAdvancedClouds(float alpha)
 	m_pTextures->loadAndBindTexture("environment/clouds.png");
 
 	currentShaderColor = Color::WHITE;
-	currentShaderDarkColor = Color::WHITE;
 
 	Color cc = dimension.getCloudColor(alpha);
     float uo;
@@ -1955,7 +1950,7 @@ void LevelRenderer::renderAdvancedClouds(float alpha)
 #endif
 		}
 
-		t.begin(3216); // it doesn't get any bigger than this
+		t.begin(3360); // it doesn't get any bigger than this
 		for (int xPos = -radius + 1; xPos <= radius; xPos++)
 		{
 			for (int zPos = -radius + 1; zPos <= radius; zPos++)

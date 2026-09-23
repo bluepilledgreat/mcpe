@@ -3,7 +3,11 @@
 #include "client/resources/Resource.hpp"
 #include "client/app/Minecraft.hpp"
 
-CompassTexture::CompassTexture(Minecraft* mc) : DynamicTexture(Item::compass->m_icon), m_pMinecraft(mc), m_rot(0), m_rota(0)
+CompassTexture::CompassTexture(Minecraft* mc)
+    : DynamicTexture(Item::compass->getIcon())
+    , m_pMinecraft(mc)
+    , m_rot(0)
+    , m_rota(0)
 {
     m_textureId = 1;
 

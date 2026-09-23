@@ -8,6 +8,7 @@
 
 #include "NinecraftApp.hpp"
 #include "world/item/Item.hpp"
+#include "world/item/SpawnEggItem.hpp"
 #include "world/entity/MobCategory.hpp"
 #include "world/entity/MobFactory.hpp"
 #include "world/tile/entity/TileEntityType.hpp"
@@ -186,6 +187,7 @@ void NinecraftApp::_initAll()
 		_hasInitedStatics = true;
 		Material::initMaterials();
 		EntityTypeDescriptor::initDescriptors(); // custom
+		SpawnEggItem::initTypes();
 		MobCategory::initMobCategories();
 		MobFactory::initMobLists();
 		TileEntityFactory::initTileEntities();
@@ -381,6 +383,9 @@ void NinecraftApp::teardownRenderer()
 
 void NinecraftApp::reloadFancy(bool isFancy)
 {
+	if (!m_pLevelRenderer)
+		return;
+
 	m_pLevelRenderer->allChanged();
 	EntityRenderDispatcher::instance->onAppSuspended();
 	_reloadFancy(isFancy);

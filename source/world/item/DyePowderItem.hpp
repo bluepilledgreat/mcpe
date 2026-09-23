@@ -8,7 +8,7 @@ public:
     DyePowderItem(int);
 
 public:
-	int getIcon(const ItemStack*) const override;
+	int getIcon(const ItemStack* itemStack = nullptr, int layer = 0) const override;
 	std::string getDescriptionId() const override;
 	std::string getDescriptionId(ItemStack&) const override;
 	bool useOn(ItemStack&, Player&, const TilePos& pos, Facing::Name face) const override;

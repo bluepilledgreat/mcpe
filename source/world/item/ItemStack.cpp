@@ -244,6 +244,11 @@ int ItemStack::getIcon() const
 	return getItem()->getIcon(this);
 }
 
+int ItemStack::getIcon(int layer) const
+{
+	return getItem()->getIcon(this, layer);
+}
+
 int ItemStack::getMaxDamage() const
 {
 	return getItem()->getMaxDamage();

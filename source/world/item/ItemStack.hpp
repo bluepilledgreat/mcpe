@@ -69,6 +69,7 @@ public:
 	std::string getHovertextName();
 	float getDestroySpeed(const Tile*);
 	int getIcon() const;
+	int getIcon(int layer) const;
 	int getMaxDamage() const;
 	int getMaxStackSize() const;
 	void hurt(int by);

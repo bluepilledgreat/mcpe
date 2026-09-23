@@ -18,7 +18,7 @@ void FireballRenderer::render(const Entity& entity, const Vec3& pos, float rot, 
 
 	constexpr float s = 2.0f;
 	matrix->scale(s / 1.0f);
-	int icon = Item::snowBall->getIcon(nullptr);
+	int icon = Item::snowBall->getIcon();
 	bindTexture(C_ITEMS_NAME);
 
 	matrix->rotate(180.0f - m_pDispatcher->m_rot.yaw, Vec3::UNIT_Y);

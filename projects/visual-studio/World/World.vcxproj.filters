@@ -791,6 +791,9 @@
     <ClCompile Include="$(MC_ROOT)\source\world\item\SnowballItem.cpp">
       <Filter>Source Files\Item</Filter>
     </ClCompile>
+    <ClCompile Include="$(MC_ROOT)\source\world\item\SpawnEggItem.cpp">
+      <Filter>Source Files\Item</Filter>
+    </ClCompile>
     <ClCompile Include="$(MC_ROOT)\source\world\item\FlintAndSteelItem.cpp">
       <Filter>Source Files\Item</Filter>
     </ClCompile>
@@ -1445,6 +1448,9 @@
       <Filter>Header Files\Entity</Filter>
     </ClInclude>
     <ClInclude Include="$(MC_ROOT)\source\world\item\SnowballItem.hpp">
+      <Filter>Header Files\Item</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MC_ROOT)\source\world\item\SpawnEggItem.hpp">
       <Filter>Header Files\Item</Filter>
     </ClInclude>
     <ClInclude Include="$(MC_ROOT)\source\world\item\FlintAndSteelItem.hpp">

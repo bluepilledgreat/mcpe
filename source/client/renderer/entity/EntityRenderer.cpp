@@ -83,22 +83,24 @@ void EntityRenderer::renderFlame(const Entity& entity, const Vec3& pos, float a)
 	matrix->scale(s);
 	matrix->rotate(-m_pDispatcher->m_rot.yaw, Vec3::UNIT_Y);
 	matrix->translate(Vec3(0.0f, 0.0f, -0.4f + (float)((int)h) * 0.02f));
+
+	currentShaderColor = Color::WHITE;
+	_setupShaderParameters(1.0f, Color::NIL);
 	
 	bindTexture(C_TERRAIN_NAME);
 	Tesselator& t = Tesselator::instance;
 	float r = 1.0f;
 	constexpr float xo = 0.5f;
 	float yo = 0.0f;
-	currentShaderColor = Color::WHITE;
-	t.begin(12);
+	t.begin(4 * ceilf(h));
 	t.normal(Vec3::UNIT_Y); // this is required for HLSL shaders since we're using the entity shader
 
 	while (h > 0.0f)
 	{
-		t.vertexUV(r - xo, 0.0f - yo, 0.0f, u1, v1);
+		t.vertexUV(r    - xo, 0.0f - yo, 0.0f, u1, v1);
 		t.vertexUV(0.0f - xo, 0.0f - yo, 0.0f, u0, v1);
 		t.vertexUV(0.0f - xo, 1.4f - yo, 0.0f, u0, v0);
-		t.vertexUV(r - xo, 1.4f - yo, 0.0f, u1, v0);
+		t.vertexUV(r    - xo, 1.4f - yo, 0.0f, u1, v0);
 		--h;
 		--yo;
 		r *= 0.9f;
@@ -159,7 +161,7 @@ void EntityRenderer::render(const AABB& aabb, const Vec3& pos)
 	t.vertex(aabb.max.x, aabb.min.y, aabb.max.z);
 	
 	t.setOffset(Vec3::ZERO);
-	t.draw(m_shaderMaterials.entity); // t.end() on Java
+	t.draw(m_shaderMaterials.entity);
 }
 
 void EntityRenderer::renderFlat(const AABB& aabb)
@@ -191,7 +193,20 @@ void EntityRenderer::renderFlat(const AABB& aabb)
 	t.vertex(aabb.max.x, aabb.max.y, aabb.min.z);
 	t.vertex(aabb.max.x, aabb.max.y, aabb.max.z);
 	t.vertex(aabb.max.x, aabb.min.y, aabb.max.z);
-	t.draw(m_shaderMaterials.entity); // t.end() on Java
+	t.draw(m_shaderMaterials.entity);
+}
+
+void EntityRenderer::preRender(const Entity& entity, const Vec3& pos, float rot, float a)
+{
+	float bright = entity.getBrightness(1.0f);
+
+#ifdef FEATURE_GFX_SHADERS
+	_setupShaderParameters(bright, getOverlayColor(entity, a));
+
+	//_setupShaderParameters(entity, a); // the more complex impl, but we use none of the params
+#else
+	currentShaderColor = Color(bright, bright, bright);
+#endif
 }
 
 void EntityRenderer::postRender(const Entity& entity, const Vec3& pos, float rot, float a)

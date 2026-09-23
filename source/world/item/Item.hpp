@@ -10,6 +10,7 @@
 
 #include <string>
 #include <stdint.h>
+#include <vector>
 
 // needed for TileData and Tile IDs
 #include "common/Utils.hpp"
@@ -51,9 +52,12 @@ public: // Methods
 	//@NOTE: The setters are virtual for whatever reason
 
 	virtual Item* setIcon(int icon);
-	virtual Item* setMaxStackSize(int mss);
 	virtual Item* setIcon(int ix, int iy);
-	virtual int getIcon(const ItemStack*) const;
+	virtual Item* pushIconLayer(int icon);
+	virtual Item* pushIconLayer(int ix, int iy);
+	virtual Item* setMaxStackSize(int mss);
+	virtual int getIcon(const ItemStack* itemStack = nullptr, int layer = 0) const;
+	virtual size_t getIconLayerCount() const;
 	virtual bool useOn(ItemStack&, Player&, const TilePos& pos, Facing::Name face) const;
 	virtual float getDestroySpeed(ItemStack&, const Tile*) const;
 	virtual bool use(ItemStack&, Mob& user) const;
@@ -86,7 +90,7 @@ public: // Methods
 	virtual void onCraftedBy(ItemStack*, Player*, Level*);
 	virtual void inventoryTick(ItemStack*, Level*, Entity*, int, bool);
 	virtual bool isDamageable() const;
-	virtual Color getColor(int data) const;
+	virtual Color getColor(const ItemStack* itemStack = nullptr, int layer = 0) const;
 	virtual int buildIdAux(int16_t auxValue, const CompoundTag* userData = nullptr) const;
 
 	// Armor/defense methods
@@ -95,12 +99,14 @@ public: // Methods
 	virtual int getDefense() const;
 
 	static void initItems();
+
+private:
+	std::vector<int> m_icons;
 	
 public: // Item class fields
 	int m_itemID;
 	int m_maxStackSize;
 	int m_maxDamage;
-	int m_icon;
 	bool m_bHandEquipped;
 	bool m_bStackedByData;
 	Item* m_pCraftingRemainingItem;
@@ -222,6 +228,7 @@ public: // Static declarations
 		*record_01,
 		*record_02,
 		*camera,
+		*spawnEgg,
 		*rocket,
 		*quiver;
 };

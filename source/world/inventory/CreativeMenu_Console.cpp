@@ -1,10 +1,12 @@
 #include "CreativeMenu_Console.hpp"
+#include "GameMods.hpp"
 #include "Slot.hpp"
 #include "common/Utils.hpp"
 #include "compat/GameVersion.h"
 #include "world/tile/Tile.hpp"
 #include "world/item/Item.hpp"
 #include "world/item/DyeColor.hpp"
+#include "world/item/SpawnEggItem.hpp"
 #include "world/tile/ClothTile.hpp"
 
 std::vector<ItemStack> CreativeMenu_Console::creativeItems[];
@@ -274,6 +276,12 @@ void CreativeMenu_Console::initCreativeItems()
 #endif
     _addItem(MISC, Item::record_01);
     _addItem(MISC, Item::record_02);
+
+#ifdef ENH_SPAWN_EGGS
+    const std::map<EntityType::ID, SpawnEggItem::Type>& eggTypes = SpawnEggItem::GetTypes();
+    for (std::map<EntityType::ID, SpawnEggItem::Type>::const_iterator it = eggTypes.begin(); it != eggTypes.end(); it++)
+        _addItem(MISC, Item::spawnEgg, it->second.m_spawnedType);
+#endif
 }
 
 CreativeMenu_Console::CreativeMenu_Console(Container* inventory, Container* container)

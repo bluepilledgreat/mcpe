@@ -7,9 +7,10 @@ AuxTileItem::AuxTileItem(int id) : TileItem(id)
 	m_bStackedByData = true;
 }
 
-int AuxTileItem::getIcon(const ItemStack* item) const
+int AuxTileItem::getIcon(const ItemStack* itemStack, int layer) const
 {
-	return Tile::tiles[m_itemID]->getTexture(Facing::NORTH, item->getAuxValue());
+	int auxValue = itemStack ? itemStack->getAuxValue() : 0;
+	return Tile::tiles[m_itemID]->getTexture(Facing::NORTH, auxValue);
 }
 
 TileData AuxTileItem::getLevelDataForAuxValue(int x) const

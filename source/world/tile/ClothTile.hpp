@@ -22,11 +22,11 @@ public:
 
 public:
 	int getTexture(Facing::Name face, TileData data) const override;
-	int getSpawnResourcesAuxValue(int val) const override;
+	int getSpawnResourcesAuxValue(int auxValue) const override;
 
 public:
-	static int getColorFromData(int var0)
+	static int getColorFromData(int data)
 	{
-		return ~var0 & 15;
+		return ~data & 15;
 	}
 };

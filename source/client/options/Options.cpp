@@ -898,9 +898,11 @@ std::string HUDSizeOption::getDisplayValue() const
 
 void UIThemeOption::apply()
 {
-	if (m_pMinecraft->getOptions() && m_pMinecraft->getOptions()->m_logoType.get() == LOGO_AUTO)
+	Minecraft& mc = *m_pMinecraft;
+
+	if (mc.getOptions() && mc.getOptions()->m_logoType.get() == LOGO_AUTO)
 	{
-		m_pMinecraft->getOptions()->m_logoType.apply();
+		mc.getOptions()->m_logoType.apply();
 	}
 
 	//if (m_pMinecraft->m_pFont)

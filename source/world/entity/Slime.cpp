@@ -99,7 +99,7 @@ void Slime::updateAi()
 
 void Slime::remove()
 {
-	if (m_size > 1 && m_health == 0)
+	if (m_size > 1 && m_health <= 0)
 	{
 		for (int i = 0; i < 4; i++)
 		{

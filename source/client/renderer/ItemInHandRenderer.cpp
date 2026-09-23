@@ -23,6 +23,7 @@ ItemInHandRenderer::Materials::Materials()
     MATERIAL_PTR(switchable, entity_alphatest);
     MATERIAL_PTR(switchable, item_in_hand);
     MATERIAL_PTR(switchable, item_in_hand_color);
+    MATERIAL_PTR(switchable, item_in_hand_ccolor);
     MATERIAL_PTR(switchable, entity_glint);
     MATERIAL_PTR(switchable, entity_alphatest_glint);
     MATERIAL_PTR(switchable, item_in_hand_glint);
@@ -76,8 +77,10 @@ void ItemInHandRenderer::render(float a)
 	}
 
 	float fBright = tileSource.getBrightness(player.m_pos);
-    currentShaderColor = Color::WHITE;
-	currentShaderDarkColor = Color(fBright, fBright, fBright);
+    currentShaderColor = Color(fBright, fBright, fBright);
+
+    _setupShaderParameters(fBright, Color::NIL);
+	//_setupShaderParameters(player, a);
 
 	ItemStack* pItem = &m_selectedItem;
 	if (player.m_pFishing)
@@ -110,7 +113,13 @@ void ItemInHandRenderer::render(float a)
             matrix->rotate(180.0f, Vec3::UNIT_Y);
         }
 
-        renderItem(player, *pItem, a);
+#ifdef FEATURE_GFX_SHADERS
+        bool preshade = true; // hand does not technically move, so lighting doesn't update on shaders, or someting...
+#else
+        bool preshade = false;
+#endif
+
+        renderItem(player, *pItem, a, preshade);
 	}
 	else
 	{
@@ -138,47 +147,27 @@ void ItemInHandRenderer::render(float a)
 	Lighting::turnOff();
 }
 
-#ifdef ENH_SHADE_HELD_TILES
-#define SHADE_IF_NEEDED(col) t.color(color * Color(col*bright,col*bright,col*bright,1.0f))
-#else
-#define SHADE_IF_NEEDED(col) t.color(color)
-#endif
-
-void ItemInHandRenderer::renderItem(const Entity& entity, const ItemStack& item, float a)
+void ItemInHandRenderer::renderItem(const Entity& entity, const ItemStack& item, float a, bool preshade)
 {
     if (item.isEmpty())
         return;
 
-#ifdef ENH_SHADE_HELD_TILES
-    float bright = entity.getBrightness(a);
+#ifdef FEATURE_GFX_SHADERS
+    Color tileLightColor = Color::WHITE;
+#else
+    float fBrightness = entity.getBrightness(a);
+    Color tileLightColor = Color(fBrightness, fBrightness, fBrightness);
 #endif
-
-    _setupShaderParameters(entity, Color::NIL, a);
 
     Tile* pTile = item.getTile();
     if (pTile && TileRenderer::canRender(pTile->getRenderShape()))
     {
-        currentShaderColor = Color::WHITE;
-        currentShaderDarkColor = Color::WHITE;
-        
         m_pMinecraft->m_pTextures->loadAndBindTexture(C_TERRAIN_NAME);
         
-#ifdef ENH_SHADE_HELD_TILES
-#	define ARGPATCH , bright
-#else
-#	define ARGPATCH
-#endif
-        
-        m_tileRenderer.renderTile(FullTile(pTile, item.getAuxValue()), m_materials.item_in_hand_color ARGPATCH);
-        
-#ifdef ARGPATCH
-#	undef ARGPATCH
-#endif
-        
+        m_tileRenderer.renderTile(FullTile(pTile, item.getAuxValue()), m_materials.item_in_hand_color, tileLightColor, preshade);
     }
     else
     {
-
         MatrixStack::Ref matrix = MatrixStack::World.push();
 
         std::string toBind;
@@ -191,16 +180,6 @@ void ItemInHandRenderer::renderItem(const Entity& entity, const ItemStack& item,
         constexpr float C_RATIO     = 1.0f / 256.0f;
         constexpr float C_RATIO_2   = 1.0f / 512.0f;
         constexpr float C_ONE_PIXEL = 1.0f / 16.0f;
-        
-        int textureX = item.getIcon() % 16 * 16;
-        int textureY = item.getIcon() / 16 * 16;
-        
-        float texU_1 = C_RATIO * float(textureX + 0.0f);
-        float texU_2 = C_RATIO * float(textureX + 15.99f);
-        float texV_1 = C_RATIO * float(textureY + 0.0f);
-        float texV_2 = C_RATIO * float(textureY + 15.99f);
-        
-        Tesselator& t = Tesselator::instance;
 
         matrix->translate(Vec3(-0.0f, -0.3f, 0.0f));
         matrix->scale(1.5f);
@@ -213,61 +192,75 @@ void ItemInHandRenderer::renderItem(const Entity& entity, const ItemStack& item,
         matrix->rotate(-90.0f, Vec3::UNIT_X);
         matrix->rotate(-90.0f, Vec3::UNIT_Y);
         matrix->translate(Vec3(0.0f, 0.0f, -16.0f));*/
-        
-        Color color = item.getItem()->getColor(item.getAuxValue());
 
-        t.begin(264);
-        SHADE_IF_NEEDED(1.0f);
-        
-        t.normal(Vec3::UNIT_Z);
-        t.vertexUV(0.0f, 0.0f, 0.0f,         texU_2, texV_2);
-        t.vertexUV(1.0f, 0.0f, 0.0f,         texU_1, texV_2);
-        t.vertexUV(1.0f, 1.0f, 0.0f,         texU_1, texV_1);
-        t.vertexUV(0.0f, 1.0f, 0.0f,         texU_2, texV_1);
-        
-        t.normal(Vec3::NEG_UNIT_Z);
-        t.vertexUV(0.0f, 1.0f, -C_ONE_PIXEL, texU_2, texV_1);
-        t.vertexUV(1.0f, 1.0f, -C_ONE_PIXEL, texU_1, texV_1);
-        t.vertexUV(1.0f, 0.0f, -C_ONE_PIXEL, texU_1, texV_2);
-        t.vertexUV(0.0f, 0.0f, -C_ONE_PIXEL, texU_2, texV_2);
-        
-        SHADE_IF_NEEDED(1.0f);
-        t.normal(Vec3::NEG_UNIT_X);
-        for (int i = 0; i < 16; i++)
+        Tesselator& t = Tesselator::instance;
+        Item* pItemType = item.getItem();
+        size_t layerCount = pItemType->getIconLayerCount();
+
+        // @TODO: this is hacky and inefficient. long-term we should be at least
+        // *trying* to bake layer & color variants into an atlas on runtime
+        // @NOTE: for whatever reason, batched items need to have their layers rendered in reverse order
+        for (int layer = layerCount-1; layer >= 0; layer--)
         {
-            t.vertexUV(i * C_ONE_PIXEL, 0.0f, -C_ONE_PIXEL, Mth::Lerp(texU_2, texU_1, i * C_ONE_PIXEL) - C_RATIO_2, texV_2);
-            t.vertexUV(i * C_ONE_PIXEL, 0.0f, 0.0f,         Mth::Lerp(texU_2, texU_1, i * C_ONE_PIXEL) - C_RATIO_2, texV_2);
-            t.vertexUV(i * C_ONE_PIXEL, 1.0f, 0.0f,         Mth::Lerp(texU_2, texU_1, i * C_ONE_PIXEL) - C_RATIO_2, texV_1);
-            t.vertexUV(i * C_ONE_PIXEL, 1.0f, -C_ONE_PIXEL, Mth::Lerp(texU_2, texU_1, i * C_ONE_PIXEL) - C_RATIO_2, texV_1);
-        }
-        for (int i = 0; i < 16; i++)
-        {
-            t.vertexUV((i + 1) * C_ONE_PIXEL, 1.0f, -C_ONE_PIXEL, Mth::Lerp(texU_2, texU_1, i * C_ONE_PIXEL) - C_RATIO_2, texV_1);
-            t.vertexUV((i + 1) * C_ONE_PIXEL, 1.0f, 0.0f,         Mth::Lerp(texU_2, texU_1, i * C_ONE_PIXEL) - C_RATIO_2, texV_1);
-            t.vertexUV((i + 1) * C_ONE_PIXEL, 0.0f, 0.0f,         Mth::Lerp(texU_2, texU_1, i * C_ONE_PIXEL) - C_RATIO_2, texV_2);
-            t.vertexUV((i + 1) * C_ONE_PIXEL, 0.0f, -C_ONE_PIXEL, Mth::Lerp(texU_2, texU_1, i * C_ONE_PIXEL) - C_RATIO_2, texV_2);
-        }
+            int icon = item.getIcon(layer);
+            Color color = pItemType->getColor(&item, layer);
+            int textureX = icon % 16 * 16;
+            int textureY = icon / 16 * 16;
+
+            float texU_1 = C_RATIO * float(textureX + 0.0f);
+            float texU_2 = C_RATIO * float(textureX + 15.99f);
+            float texV_1 = C_RATIO * float(textureY + 0.0f);
+            float texV_2 = C_RATIO * float(textureY + 15.99f);
+
+            currentShaderColor = color * tileLightColor;
+
+            t.begin(264);
         
-        SHADE_IF_NEEDED(1.0f);
-        for (int i = 0; i < 16; i++)
-        {
-            t.vertexUV(0.0f, (i + 1) * C_ONE_PIXEL, 0.0f,         texU_2, Mth::Lerp(texV_2, texV_1, i * C_ONE_PIXEL));
-            t.vertexUV(1.0f, (i + 1) * C_ONE_PIXEL, 0.0f,         texU_1, Mth::Lerp(texV_2, texV_1, i * C_ONE_PIXEL));
-            t.vertexUV(1.0f, (i + 1) * C_ONE_PIXEL, -C_ONE_PIXEL, texU_1, Mth::Lerp(texV_2, texV_1, i * C_ONE_PIXEL));
-            t.vertexUV(0.0f, (i + 1) * C_ONE_PIXEL, -C_ONE_PIXEL, texU_2, Mth::Lerp(texV_2, texV_1, i * C_ONE_PIXEL));
+            t.normal(Vec3::UNIT_Z);
+            t.vertexUV(0.0f, 0.0f, 0.0f,         texU_2, texV_2);
+            t.vertexUV(1.0f, 0.0f, 0.0f,         texU_1, texV_2);
+            t.vertexUV(1.0f, 1.0f, 0.0f,         texU_1, texV_1);
+            t.vertexUV(0.0f, 1.0f, 0.0f,         texU_2, texV_1);
+        
+            t.normal(Vec3::NEG_UNIT_Z);
+            t.vertexUV(0.0f, 1.0f, -C_ONE_PIXEL, texU_2, texV_1);
+            t.vertexUV(1.0f, 1.0f, -C_ONE_PIXEL, texU_1, texV_1);
+            t.vertexUV(1.0f, 0.0f, -C_ONE_PIXEL, texU_1, texV_2);
+            t.vertexUV(0.0f, 0.0f, -C_ONE_PIXEL, texU_2, texV_2);
+        
+            t.normal(Vec3::NEG_UNIT_X);
+            for (int i = 0; i < 16; i++)
+            {
+                t.vertexUV(i * C_ONE_PIXEL, 0.0f, -C_ONE_PIXEL, Mth::Lerp(texU_2, texU_1, i * C_ONE_PIXEL) - C_RATIO_2, texV_2);
+                t.vertexUV(i * C_ONE_PIXEL, 0.0f, 0.0f,         Mth::Lerp(texU_2, texU_1, i * C_ONE_PIXEL) - C_RATIO_2, texV_2);
+                t.vertexUV(i * C_ONE_PIXEL, 1.0f, 0.0f,         Mth::Lerp(texU_2, texU_1, i * C_ONE_PIXEL) - C_RATIO_2, texV_1);
+                t.vertexUV(i * C_ONE_PIXEL, 1.0f, -C_ONE_PIXEL, Mth::Lerp(texU_2, texU_1, i * C_ONE_PIXEL) - C_RATIO_2, texV_1);
+            }
+            for (int i = 0; i < 16; i++)
+            {
+                t.vertexUV((i + 1) * C_ONE_PIXEL, 1.0f, -C_ONE_PIXEL, Mth::Lerp(texU_2, texU_1, i * C_ONE_PIXEL) - C_RATIO_2, texV_1);
+                t.vertexUV((i + 1) * C_ONE_PIXEL, 1.0f, 0.0f,         Mth::Lerp(texU_2, texU_1, i * C_ONE_PIXEL) - C_RATIO_2, texV_1);
+                t.vertexUV((i + 1) * C_ONE_PIXEL, 0.0f, 0.0f,         Mth::Lerp(texU_2, texU_1, i * C_ONE_PIXEL) - C_RATIO_2, texV_2);
+                t.vertexUV((i + 1) * C_ONE_PIXEL, 0.0f, -C_ONE_PIXEL, Mth::Lerp(texU_2, texU_1, i * C_ONE_PIXEL) - C_RATIO_2, texV_2);
+            }
+        
+            for (int i = 0; i < 16; i++)
+            {
+                t.vertexUV(0.0f, (i + 1) * C_ONE_PIXEL, 0.0f,         texU_2, Mth::Lerp(texV_2, texV_1, i * C_ONE_PIXEL));
+                t.vertexUV(1.0f, (i + 1) * C_ONE_PIXEL, 0.0f,         texU_1, Mth::Lerp(texV_2, texV_1, i * C_ONE_PIXEL));
+                t.vertexUV(1.0f, (i + 1) * C_ONE_PIXEL, -C_ONE_PIXEL, texU_1, Mth::Lerp(texV_2, texV_1, i * C_ONE_PIXEL));
+                t.vertexUV(0.0f, (i + 1) * C_ONE_PIXEL, -C_ONE_PIXEL, texU_2, Mth::Lerp(texV_2, texV_1, i * C_ONE_PIXEL));
+            }
+            for (int i = 0; i < 16; i++)
+            {
+                t.vertexUV(1.0f, i * C_ONE_PIXEL, 0.0f,         texU_1, Mth::Lerp(texV_2, texV_1, i * C_ONE_PIXEL));
+                t.vertexUV(0.0f, i * C_ONE_PIXEL, 0.0f,         texU_2, Mth::Lerp(texV_2, texV_1, i * C_ONE_PIXEL));
+                t.vertexUV(0.0f, i * C_ONE_PIXEL, -C_ONE_PIXEL, texU_2, Mth::Lerp(texV_2, texV_1, i * C_ONE_PIXEL));
+                t.vertexUV(1.0f, i * C_ONE_PIXEL, -C_ONE_PIXEL, texU_1, Mth::Lerp(texV_2, texV_1, i * C_ONE_PIXEL));
+            }
+
+            t.draw(color == Color::WHITE ? m_materials.item_in_hand : m_materials.item_in_hand_ccolor);
         }
-        for (int i = 0; i < 16; i++)
-        {
-            t.vertexUV(1.0f, i * C_ONE_PIXEL, 0.0f,         texU_1, Mth::Lerp(texV_2, texV_1, i * C_ONE_PIXEL));
-            t.vertexUV(0.0f, i * C_ONE_PIXEL, 0.0f,         texU_2, Mth::Lerp(texV_2, texV_1, i * C_ONE_PIXEL));
-            t.vertexUV(0.0f, i * C_ONE_PIXEL, -C_ONE_PIXEL, texU_2, Mth::Lerp(texV_2, texV_1, i * C_ONE_PIXEL));
-            t.vertexUV(1.0f, i * C_ONE_PIXEL, -C_ONE_PIXEL, texU_1, Mth::Lerp(texV_2, texV_1, i * C_ONE_PIXEL));
-        }
-#ifndef ENH_SHADE_HELD_TILES
-        t.draw(color == Color::WHITE ? m_materials.item_in_hand : m_materials.item_in_hand_color);
-#else
-        t.draw(m_materials.item_in_hand_color);
-#endif
     }
 }
 
@@ -313,7 +306,6 @@ void ItemInHandRenderer::renderWater(float a)
 
     float br = player.getBrightness(a);
     currentShaderColor = Color(br, br, br, 0.5f);
-    currentShaderDarkColor = Color::WHITE;
     MatrixStack::Ref matrix = MatrixStack::World.push();
 
     constexpr float size = 4.0f;
@@ -336,7 +328,6 @@ void ItemInHandRenderer::renderWater(float a)
 void ItemInHandRenderer::renderFire(float a)
 {
     currentShaderColor = Color(1.0f, 1.0f, 1.0f, 0.9f);
-    currentShaderDarkColor = Color::WHITE;
 	for (int i = 0; i < 2; i++)
 	{
         MatrixStack::Ref matrix = MatrixStack::World.push();
@@ -363,7 +354,6 @@ void ItemInHandRenderer::renderTex(float a, int texture)
 	//m_pMinecraft->m_pLocalPlayer->getBrightness(a);
     constexpr float br = 0.1f; // 0.3f on PE 0.12.1
     currentShaderColor = Color(br, br, br); // Java passed 0.5f for transparency, but this never actually worked
-    currentShaderDarkColor = Color::WHITE;
     MatrixStack::Ref matrix = MatrixStack::World.push();
 
 	// @BUG: The texture x/y isn't multiplied by 16. This causes some weird textures to show up instead of the correct ones.
@@ -427,4 +417,10 @@ void ItemInHandRenderer::tick()
 
 void ItemInHandRenderer::turn(const Rot2& rot)
 {
+}
+
+Color ItemInHandRenderer::getOverlayColor(const Entity& entity, float a) const
+{
+	// we don't recolor the first-person hand or item, as cool as it would be
+	return Color::NIL;
 }

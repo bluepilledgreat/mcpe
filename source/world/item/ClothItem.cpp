@@ -16,9 +16,10 @@ std::string ClothItem::getDescriptionId(ItemStack& item) const
 	return TileItem::getDescriptionId(item) + "." + DyeColor::IDS[ClothTile::getColorFromData(item.getAuxValue())];
 }
 
-int ClothItem::getIcon(const ItemStack* item) const
+int ClothItem::getIcon(const ItemStack* itemStack, int layer) const
 {
-	return Tile::cloth->getTexture(Facing::NORTH, ClothTile::getColorFromData(item->getAuxValue()));
+	int auxValue = itemStack ? itemStack->getAuxValue() : 0;
+	return Tile::cloth->getTexture(Facing::NORTH, ClothTile::getColorFromData(auxValue));
 }
 
 TileData ClothItem::getLevelDataForAuxValue(int x) const

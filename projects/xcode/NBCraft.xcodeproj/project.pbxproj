@@ -1429,6 +1429,8 @@
 		84ED413E2FC3EC220038BAC4 /* FlintAndSteelItem.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 84ED41382FC3EC220038BAC4 /* FlintAndSteelItem.hpp */; };
 		84ED413F2FC3EC220038BAC4 /* SnowballItem.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 84ED41392FC3EC220038BAC4 /* SnowballItem.cpp */; };
 		84ED41402FC3EC220038BAC4 /* SnowballItem.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 84ED413A2FC3EC220038BAC4 /* SnowballItem.hpp */; };
+		84ED42032FC3EC220038BAC4 /* SpawnEggItem.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 84ED42012FC3EC220038BAC4 /* SpawnEggItem.cpp */; };
+		84ED42042FC3EC220038BAC4 /* SpawnEggItem.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 84ED42022FC3EC220038BAC4 /* SpawnEggItem.hpp */; };
 		84ED41422FC3EC520038BAC4 /* OrderingChannel.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 84ED41412FC3EC520038BAC4 /* OrderingChannel.hpp */; };
 		84ED41472FC3EC730038BAC4 /* Snowball.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 84ED41432FC3EC730038BAC4 /* Snowball.cpp */; };
 		84ED41482FC3EC730038BAC4 /* Snowball.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 84ED41442FC3EC730038BAC4 /* Snowball.hpp */; };
@@ -3376,6 +3378,8 @@
 		84ED41382FC3EC220038BAC4 /* FlintAndSteelItem.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = FlintAndSteelItem.hpp; sourceTree = "<group>"; };
 		84ED41392FC3EC220038BAC4 /* SnowballItem.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = SnowballItem.cpp; sourceTree = "<group>"; };
 		84ED413A2FC3EC220038BAC4 /* SnowballItem.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = SnowballItem.hpp; sourceTree = "<group>"; };
+		84ED42012FC3EC220038BAC4 /* SpawnEggItem.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = SpawnEggItem.cpp; sourceTree = "<group>"; };
+		84ED42022FC3EC220038BAC4 /* SpawnEggItem.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = SpawnEggItem.hpp; sourceTree = "<group>"; };
 		84ED41412FC3EC520038BAC4 /* OrderingChannel.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = OrderingChannel.hpp; sourceTree = "<group>"; };
 		84ED41432FC3EC730038BAC4 /* Snowball.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Snowball.cpp; sourceTree = "<group>"; };
 		84ED41442FC3EC730038BAC4 /* Snowball.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = Snowball.hpp; sourceTree = "<group>"; };
@@ -4344,6 +4348,8 @@
 				84E1C9E42E7FDC72007D2F5D /* SlabItem.hpp */,
 				84ED41392FC3EC220038BAC4 /* SnowballItem.cpp */,
 				84ED413A2FC3EC220038BAC4 /* SnowballItem.hpp */,
+				84ED42012FC3EC220038BAC4 /* SpawnEggItem.cpp */,
+				84ED42022FC3EC220038BAC4 /* SpawnEggItem.hpp */,
 				840DD67A2AC810620006A435 /* TileItem.cpp */,
 				840DD67B2AC810620006A435 /* TileItem.hpp */,
 				840DD67C2AC810620006A435 /* TilePlanterItem.cpp */,
@@ -6505,6 +6511,7 @@
 				84E8F9FF2FEF611800D0669F /* FlyingMob.hpp in Headers */,
 				84BF63892AF186C8008A9995 /* TileItem.hpp in Headers */,
 				84ED41402FC3EC220038BAC4 /* SnowballItem.hpp in Headers */,
+				84ED42042FC3EC220038BAC4 /* SpawnEggItem.hpp in Headers */,
 				84BF638A2AF186C8008A9995 /* TilePlanterItem.hpp in Headers */,
 				84E24C782FC969D9004C4D06 /* CakeTile.hpp in Headers */,
 				84E7BF292F286A08002D3936 /* Slot.hpp in Headers */,
@@ -7743,6 +7750,7 @@
 				84C6142B2F323602008AC5BE /* WeaponItem.cpp in Sources */,
 				84BF63212AF18631008A9995 /* Biome.cpp in Sources */,
 				84ED413F2FC3EC220038BAC4 /* SnowballItem.cpp in Sources */,
+				84ED42032FC3EC220038BAC4 /* SpawnEggItem.cpp in Sources */,
 				84BF63222AF18631008A9995 /* BiomeSource.cpp in Sources */,
 				84BF63232AF18631008A9995 /* ChunkCache.cpp in Sources */,
 				84E8FA402FEF657400D0669F /* FishingRodItem.cpp in Sources */,

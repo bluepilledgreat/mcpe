@@ -32,6 +32,7 @@ const uint8_t g_ItemFrames[C_MAX_TILES] =
 ItemRenderer::Materials::Materials()
 {
 	MATERIAL_PTR(switchable, item_entity_item);
+	MATERIAL_PTR(switchable, item_entity_item_layered);
 	MATERIAL_PTR(switchable, item_entity_tile);
 	MATERIAL_PTR(common, ui_fill_color);
 	MATERIAL_PTR(common, ui_fill_gradient);
@@ -84,8 +85,6 @@ void ItemRenderer::render(const Entity& entity, const Vec3& pos, float rot, floa
 
 	matrix->translate(Vec3(pos.x, pos.y + 0.1f + yOffset * 0.1f, pos.z));
 
-	_setupShaderParameters(entity, Color::NIL, a);
-
 	Tile* pTile = itemStack.getTile();
 	if (pTile && TileRenderer::canRender(pTile->getRenderShape()))
 	{
@@ -102,6 +101,13 @@ void ItemRenderer::render(const Entity& entity, const Vec3& pos, float rot, floa
 
 		matrix->scale(scale);
 
+#ifdef FEATURE_GFX_SHADERS
+		Color tileLightColor = Color::WHITE;
+#else
+		float fBrightness = itemEntity.getBrightness(1.0f);
+		Color tileLightColor(fBrightness, fBrightness, fBrightness);
+#endif
+
 		for (int i = 0; i < itemsToRender; i++)
 		{
 			MatrixStack::Ref matrix = MatrixStack::World.push();
@@ -113,13 +119,12 @@ void ItemRenderer::render(const Entity& entity, const Vec3& pos, float rot, floa
 					0.2f * (m_random.nextFloat() * 2.0f - 1.0f) / scale));
 			}
 
-			m_pTileRenderer->renderTile(FullTile(pTile, itemStack.getAuxValue()), m_itemMaterials.item_entity_tile, itemEntity.getBrightness(1.0f));
+			m_pTileRenderer->renderTile(FullTile(pTile, itemStack.getAuxValue()), m_itemMaterials.item_entity_tile, tileLightColor);
 		}
 	}
 	else
 	{
 		matrix->scale(0.5f);
-		int icon = itemStack.getIcon();
 
 		bindTexture(itemStack.getTile() ? C_TERRAIN_NAME : C_ITEMS_NAME);
 
@@ -137,21 +142,45 @@ void ItemRenderer::render(const Entity& entity, const Vec3& pos, float rot, floa
 			matrix->rotate(180.0f - m_pDispatcher->m_rot.yaw, Vec3::UNIT_Y);
 
 			Tesselator& t = Tesselator::instance;
-			t.begin(4);
+			Item* pItemType = itemStack.getItem();
+			size_t iconLayers = pItemType->getIconLayerCount();
+			bool isMultiLayered = iconLayers > 1;
 
-			Color color = itemStack.getItem()->getColor(itemStack.getAuxValue());
+			if (isMultiLayered) // we will apply the brightness ourselves via vertex colors
+				currentShaderColor = Color::WHITE;
 
-#ifdef ENH_SHADE_HELD_TILES
-			color.mulRGB(itemEntity.getBrightness(1.0f));
+			// @TODO: this is hacky and inefficient. long-term we should be at least
+			// *trying* to bake layer & color variants into an atlas on runtime
+			t.begin(4 * iconLayers);
+
+			// @NOTE: for whatever reason, batched items need to have their layers rendered in reverse order
+			for (int layer = iconLayers - 1; layer >= 0; layer--)
+			{
+				Color color = pItemType->getColor(&itemStack, layer);
+				int icon = itemStack.getIcon(layer);
+
+#ifndef FEATURE_GFX_SHADERS
+				float fBrightness = itemEntity.getBrightness(1.0f);
+				color.mulRGB(fBrightness);
 #endif
-			currentShaderColor = color;
-			t.normal(Vec3::UNIT_Y);
-			t.vertexUV(-0.5f, -0.25f, 0.0f, float(16 * (icon % 16))     / 256.0f, float(16 * (icon / 16 + 1)) / 256.0f);
-			t.vertexUV(+0.5f, -0.25f, 0.0f, float(16 * (icon % 16 + 1)) / 256.0f, float(16 * (icon / 16 + 1)) / 256.0f);
-			t.vertexUV(+0.5f, +0.75f, 0.0f, float(16 * (icon % 16 + 1)) / 256.0f, float(16 * (icon / 16))     / 256.0f);
-			t.vertexUV(-0.5f, +0.75f, 0.0f, float(16 * (icon % 16))     / 256.0f, float(16 * (icon / 16))     / 256.0f);
+
+				if (isMultiLayered)
+				{
+					t.color(color);
+				}
+				else
+				{
+					currentShaderColor = color;
+				}
+
+				t.normal(Vec3::UNIT_Y);
+				t.vertexUV(-0.5f, -0.25f, 0.0f, float(16 * (icon % 16)) / 256.0f, float(16 * (icon / 16 + 1)) / 256.0f);
+				t.vertexUV(+0.5f, -0.25f, 0.0f, float(16 * (icon % 16 + 1)) / 256.0f, float(16 * (icon / 16 + 1)) / 256.0f);
+				t.vertexUV(+0.5f, +0.75f, 0.0f, float(16 * (icon % 16 + 1)) / 256.0f, float(16 * (icon / 16)) / 256.0f);
+				t.vertexUV(-0.5f, +0.75f, 0.0f, float(16 * (icon % 16)) / 256.0f, float(16 * (icon / 16)) / 256.0f);
+			}
             
-			t.draw(m_itemMaterials.item_entity_item);
+			t.draw(isMultiLayered ? m_itemMaterials.item_entity_item_layered : m_itemMaterials.item_entity_item);
 		}
 	}
 }
@@ -184,6 +213,7 @@ void ItemRenderer::blit(int dx, int dy, int sx, int sy, int tw, int th, const Co
 	t.vertexUV(ex,      ey,      0.0f, float(vx)      / 256.0f, float(vy)      / 256.0f);
 	t.draw(color == Color::WHITE ? m_itemMaterials.ui_textured : m_itemMaterials.ui_texture_and_color);
 }
+
 void ItemRenderer::renderGuiItemOverlay(Minecraft& mc, const ItemStack& item, int x, int y)
 {
 	if (item.isEmpty())
@@ -249,7 +279,7 @@ void ItemRenderer::renderGuiItem(Minecraft& mc, const ItemStack& item, int x, in
 		bCanRenderAsIs = true;
 	}
 #else
-	if (COND_PRE(TileRenderer::canRender(pTile->getRenderShape()) || g_ItemFrames[itemID] != 0))
+	if (COND_PRE(TileRenderer::canRender(pTile->getRenderShape()) || g_ItemFrames[item.getId()] != 0))
 	{
 		bCanRenderAsIs = true;
 	}
@@ -258,19 +288,19 @@ void ItemRenderer::renderGuiItem(Minecraft& mc, const ItemStack& item, int x, in
 	if (pTile && bCanRenderAsIs)
 	{
 #ifndef ENH_3D_INVENTORY_TILES
-		textures->loadAndBindTexture(C_BLOCKS_NAME);
+		textures.loadAndBindTexture(C_BLOCKS_NAME);
 
-		float texU = float(g_ItemFrames[item->getId()] % 10) * 48.0f;
-		float texV = float(g_ItemFrames[item->getId()] / 10) * 48.0f;
+		float texU = float(g_ItemFrames[item.getId()] % 10) * 48.0f;
+		float texV = float(g_ItemFrames[item.getId()] / 10) * 48.0f;
 
-		Tesselator& t = Tesselator::item;
+		Tesselator& t = Tesselator::instance;
 		// @NOTE: These do nothing, due to a previous t.voidBeginAndEndCalls call.
-		t.begin();
+		t.begin(4);
 		t.vertexUV(float(x +  0), float(y + 16), 0.0f,  texU          / 512.0f, (texV + 48.0f) / 512.0f);
 		t.vertexUV(float(x + 16), float(y + 16), 0.0f, (texU + 48.0f) / 512.0f, (texV + 48.0f) / 512.0f);
 		t.vertexUV(float(x + 16), float(y +  0), 0.0f, (texU + 48.0f) / 512.0f,  texV          / 512.0f);
 		t.vertexUV(float(x +  0), float(y +  0), 0.0f,  texU          / 512.0f,  texV          / 512.0f);
-		t.draw();
+		t.draw(m_itemMaterials.ui_textured);
 #else
 
 		textures.loadAndBindTexture(C_TERRAIN_NAME);
@@ -281,6 +311,7 @@ void ItemRenderer::renderGuiItem(Minecraft& mc, const ItemStack& item, int x, in
 		if (mc.getUiTheme() == UI_CONSOLE)
 		{
 			Lighting::turnOnConsoleUiItems();
+			m_pTileRenderer->setLightingPreset(TileRenderer::LIGHTING_PRESET_CONSOLE); // for baked lighting
 			matrix->translate(Vec3(x, y, 0));
 			matrix->scale(16);
 			matrix->translate(Vec3(0.5f, 0.5f, 0.0f));
@@ -297,10 +328,17 @@ void ItemRenderer::renderGuiItem(Minecraft& mc, const ItemStack& item, int x, in
 		matrix->rotate(210.0f, Vec3::UNIT_X);
 		matrix->rotate(45.0f, Vec3::UNIT_Y);
 		matrix->rotate(-90.0f, Vec3::UNIT_Y);
+
+#ifdef FEATURE_GFX_SHADERS
+		bool preshade = true;
+#else
+		bool preshade = false;
+#endif
 		
-		m_pTileRenderer->renderTile(FullTile(pTile, item.getAuxValue()), m_itemMaterials.ui_item, color);
+		m_pTileRenderer->renderTile(FullTile(pTile, item.getAuxValue()), m_itemMaterials.ui_item, color, preshade);
 
 		Lighting::turnOff();
+		m_pTileRenderer->setLightingPreset(TileRenderer::LIGHTING_PRESET_JAVA);
 		#undef PARM_HACK
 #endif
 	}
@@ -313,6 +351,16 @@ void ItemRenderer::renderGuiItem(Minecraft& mc, const ItemStack& item, int x, in
 		else
 			textures.loadAndBindTexture(C_ITEMS_NAME);
 
-		blit(x, y, 16 * (item.getIcon() % 16), 16 * (item.getIcon() / 16), 16, 16, color * item.getItem()->getColor(item.getAuxValue()));
+		Item*  pItemType  = item.getItem();
+		size_t iconLayers = pItemType->getIconLayerCount();
+
+		// @TODO: this is hacky and inefficient. long-term we should be at least
+		// *trying* to bake layer & color variants into an atlas on runtime
+		for (int layer = 0; layer < (int)iconLayers; layer++)
+		{
+			int itemIcon = item.getIcon(layer);
+			Color itemColor = pItemType->getColor(&item, layer);
+			blit(x, y, 16 * (itemIcon % 16), 16 * (itemIcon / 16), 16, 16, color * itemColor);
+		}
 	}
 }

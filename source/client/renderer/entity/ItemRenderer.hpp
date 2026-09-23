@@ -19,6 +19,7 @@ protected:
 	{
 	public:
 		mce::MaterialPtr item_entity_item;
+		mce::MaterialPtr item_entity_item_layered;
 		mce::MaterialPtr item_entity_tile;
 		mce::MaterialPtr ui_fill_color;
 		mce::MaterialPtr ui_fill_gradient;

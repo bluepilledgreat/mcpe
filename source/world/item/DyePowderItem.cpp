@@ -16,10 +16,10 @@ DyePowderItem::DyePowderItem(int itemID) : Item(itemID)
 	m_maxDamage = 0;
 }
 
-int DyePowderItem::getIcon(const ItemStack* item) const
+int DyePowderItem::getIcon(const ItemStack* itemStack, int layer) const
 {
-	int i = item->getAuxValue();
-	return m_icon + i % 8 * 16 + i / 8;
+	int aux = itemStack ? itemStack->getAuxValue() : 0;
+	return Item::getIcon() + aux % 8 * 16 + aux / 8;
 }
 
 std::string DyePowderItem::getDescriptionId() const

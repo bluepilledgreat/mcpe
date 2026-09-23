@@ -390,6 +390,9 @@ void Entity::moveTo(const Vec3& pos, const Rot2& rot)
 {
 	moveTo(pos);
 	m_rot = rot;
+
+	// @BUG?: not set in any version, but seems like it should be
+	//m_oRot = rot;
 }
 
 void Entity::absMoveTo(const Vec3& pos)

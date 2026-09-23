@@ -54,13 +54,15 @@ void main()
 	color.rgb = mix(color, overlayColor, overlayColor.a).rgb;
 #endif
 
-#ifdef USE_EMISSIVE
-	//make glowy stuff
-	color *= mix(vec4(1.0), light, color.a );
-#elif defined(USE_VERTEX_COLORS)
+#ifdef USE_VERTEX_COLORS
 	color *= vertexColor;
 #elif defined(USE_CURRENT_COLOR)
 	color *= CURRENT_COLOR;
+#endif
+
+#ifdef USE_EMISSIVE
+	//make glowy stuff
+	color *= mix(vec4(1.0), light, color.a );
 #else
 	color *= light;
 #endif

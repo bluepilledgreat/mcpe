@@ -445,6 +445,7 @@ add_library(nbcraft-core STATIC
     world/item/SlabItem.cpp
     world/item/RedStoneItem.cpp
     world/item/SnowballItem.cpp
+    world/item/SpawnEggItem.cpp
     world/item/FishingRodItem.cpp
     world/item/RecordingItem.cpp
     world/item/BucketItem.cpp

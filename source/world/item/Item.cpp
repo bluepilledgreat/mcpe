@@ -37,6 +37,7 @@
 #include "FishingRodItem.hpp"
 #include "RecordingItem.hpp"
 #include "BucketItem.hpp"
+#include "SpawnEggItem.hpp"
 
 #define ITEM(x) ((x) - 256)
 
@@ -54,18 +55,12 @@ Random Item::random;
 
 Item::Item(int itemID)
 {
-	m_bHandEquipped = 0;
 	m_itemID = itemID + 256;
-	m_bStackedByData = 0;
-	m_pCraftingRemainingItem = 0;
 	m_maxStackSize = 64;
 	m_maxDamage = 32;
-
-#ifndef ORIGINAL_CODE
-	//@UB: Not initializing m_icon.
-	m_icon = 0;
-#endif
-
+	m_bHandEquipped = 0;
+	m_bStackedByData = 0;
+	m_pCraftingRemainingItem = 0;
 
 	if (Item::items[m_itemID])
 	{
@@ -77,7 +72,9 @@ Item::Item(int itemID)
 
 Item* Item::setIcon(int icon)
 {
-	m_icon = icon;
+	// revert to single-icon setup
+	m_icons.resize(1);
+	m_icons[0] = icon;
 	return this;
 }
 
@@ -86,10 +83,31 @@ Item* Item::setIcon(int ix, int iy)
 	return setIcon(ix + 16 * iy);
 }
 
+Item* Item::pushIconLayer(int icon)
+{
+	m_icons.push_back(icon);
+	return this;
+}
+
+Item* Item::pushIconLayer(int ix, int iy)
+{
+	return pushIconLayer(ix + 16 * iy);
+}
+
 Item* Item::setMaxStackSize(int mss)
 {
 	m_maxStackSize = mss;
 	return this;
+}
+
+int Item::getIcon(const ItemStack* itemStack, int layer) const
+{
+	return m_icons[layer];
+}
+
+size_t Item::getIconLayerCount() const
+{
+	return m_icons.size();
 }
 
 Item* Item::setCraftingRemainingItem(Item* pItem)
@@ -598,6 +616,11 @@ void Item::initItems()
 		->setIcon(2, 15)
 		->setDescriptionId("camera");
 
+	Item::spawnEgg = NEW_X_ITEMN(SpawnEggItem, ITEM_SPAWN_EGG)
+		->pushIconLayer(9, 9)
+		->pushIconLayer(9, 10)
+		->setDescriptionId("monsterPlacer");
+
 	Item::rocket = NEW_X_ITEMN(RocketItem, ITEM_ROCKET)
 		->setIcon(14, 2)
 		->setDescriptionId("rocket");
@@ -605,11 +628,6 @@ void Item::initItems()
 	Item::quiver = NEW_ITEM(ITEM_QUIVER)
 		->setIcon(6, 2)
 		->setDescriptionId("quiver");
-}
-
-int Item::getIcon(const ItemStack* item) const
-{
-	return m_icon;
 }
 
 bool Item::useOn(ItemStack& itemStack, Player& player, const TilePos& pos, Facing::Name face) const
@@ -756,7 +774,7 @@ bool Item::isDamageable() const
 	return m_maxDamage > 0 && !m_bStackedByData;
 }
 
-Color Item::getColor(int data) const
+Color Item::getColor(const ItemStack* itemStack, int layer) const
 {
 	return Color::WHITE;
 }
@@ -874,6 +892,7 @@ Item
 	*Item::record_01,
 	*Item::record_02,
 	*Item::camera,
+	*Item::spawnEgg,
 	*Item::rocket,
 	*Item::quiver;
 

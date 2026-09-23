@@ -42,7 +42,7 @@ sampler TextureSampler2 : register( s2 );
 #endif
 #endif
 
-#if defined(LOW_PRECISION) && _SHADER_TARAGET_MAJOR >= 4
+#if defined(LOW_PRECISION) && _SHADER_TARGET_MAJOR >= 4
 #define lpfloat min16float
 #define lpfloat4 min16float4
 #else
@@ -58,13 +58,20 @@ sampler TextureSampler2 : register( s2 );
 #define CBUFFER_END
 
 #define VS_MAIN_BEGIN PS_Input main( VS_Input VSInput ) { PS_Input PSInput; 
+#ifdef _XBOX
+#define VS_MAIN_END return PSInput; }
+#else
 #define VS_MAIN_END float2 __d3d9offset = (__D3D9_OFFSET_X, __D3D9_OFFSET_Y); PSInput.position.xy += __d3d9offset.xy * PSInput.position.w; return PSInput; }
+#endif
 #define PS_MAIN_BEGIN PS_Output main( PS_Input PSInput ) { PS_Output PSOutput; 
 #define PS_MAIN_END return PSOutput; }
 
 #define R8G8B8A8_SNORM_UNSUPPORTED
 
 // D3D9 has OpenGL-like render state alpha testing
+#ifdef ALPHA_TEST
+#undef ALPHA_TEST
+#endif
 #if _SHADER_TARGET_MAJOR <= 1 // error X3500: asymetric returns from if statements not yet implemented
 #define discard PSOutput.color = float4(0,0,0,0) // @NOTE: we WILL run bonus code after this, you MUST add a "} else {"
 #else // _SHADER_TARGET_MAJOR >= 2

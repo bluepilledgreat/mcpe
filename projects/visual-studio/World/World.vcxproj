@@ -271,6 +271,7 @@
     <ClCompile Include="$(MC_ROOT)\source\world\item\EggItem.cpp" />
     <ClCompile Include="$(MC_ROOT)\source\world\item\FlintAndSteelItem.cpp" />
     <ClCompile Include="$(MC_ROOT)\source\world\item\SnowballItem.cpp" />
+    <ClCompile Include="$(MC_ROOT)\source\world\item\SpawnEggItem.cpp" />
     <ClCompile Include="$(MC_ROOT)\source\world\particle\ItemParticle.cpp" />
     <ClCompile Include="$(MC_ROOT)\source\world\item\RecordingItem.cpp" />
     <ClCompile Include="$(MC_ROOT)\source\world\tile\RecordPlayerTile.cpp" />
@@ -492,6 +493,7 @@
     <ClInclude Include="$(MC_ROOT)\source\world\item\EggItem.hpp" />
     <ClInclude Include="$(MC_ROOT)\source\world\item\FlintAndSteelItem.hpp" />
     <ClInclude Include="$(MC_ROOT)\source\world\item\SnowballItem.hpp" />
+    <ClInclude Include="$(MC_ROOT)\source\world\item\SpawnEggItem.hpp" />
     <ClInclude Include="$(MC_ROOT)\source\world\item\RecordingItem.hpp" />
     <ClInclude Include="$(MC_ROOT)\source\world\tile\RecordPlayerTile.hpp" />
     <ClInclude Include="$(MC_ROOT)\source\world\tile\CakeTile.hpp" />
