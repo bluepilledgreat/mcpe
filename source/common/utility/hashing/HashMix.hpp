@@ -1,6 +1,6 @@
 // Taken from Boost
 #pragma once
-#include <cstdint>
+#include <stdint.h>
 #include <limits.h>
 
 template<size_t Bits> struct hash_mix_impl;
