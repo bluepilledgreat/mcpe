@@ -55,9 +55,9 @@ template<size_t Bits> struct hash_mix_impl;
 
 template<> struct hash_mix_impl<64>
 {
-    inline static std::uint64_t fn(std::uint64_t x)
+    inline static uint64_t fn(uint64_t x)
     {
-        std::uint64_t const m = 0xe9846af9b1a615d;
+        uint64_t const m = 0xe9846af9b1a615d;
 
         x ^= x >> 32;
         x *= m;
@@ -76,10 +76,10 @@ template<> struct hash_mix_impl<64>
 
 template<> struct hash_mix_impl<32>
 {
-    inline static std::uint32_t fn(std::uint32_t x)
+    inline static uint32_t fn(uint32_t x)
     {
-        std::uint32_t const m1 = 0x21f0aaad;
-        std::uint32_t const m2 = 0x735a2d97;
+        uint32_t const m1 = 0x21f0aaad;
+        uint32_t const m2 = 0x735a2d97;
 
         x ^= x >> 16;
         x *= m1;

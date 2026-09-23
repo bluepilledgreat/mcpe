@@ -295,6 +295,11 @@ private:
 	static int _CountNewLines(const std::string& str);
 
 private:
+	std::string m_asciiFileName;
+	Options* m_options;
+	Textures* m_textures;
+	Materials m_materials;
+
 	uint8_t m_charWidth[NUM_GLYPHS];
 	std::vector<GlyphQuad> m_glyphMapQuads[NUM_GLYPHS / COMMON_MAP_TOTAL];
 	std::set<int> m_usedGlyphMapQuads;
@@ -312,11 +317,6 @@ private:
 	// TODO: switch to integer Vec2
 	int m_pixelX;
 	int m_pixelY;
-
-	std::string m_asciiFileName;
-	Options* m_options;
-	Textures* m_textures;
-	Materials m_materials;
 
 protected:
 	float m_unicodeShadowOffset;

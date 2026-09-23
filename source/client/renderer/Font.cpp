@@ -867,10 +867,10 @@ void Font::drawString(const std::string& str, int x, int y, const Color& color, 
 void Font::drawOutlinedString(const std::string& str, int x, int y, const Color& color, const Color& outlineColor, float scale, int thickness)
 {
 	int translations[] = {0, thickness, -thickness};
-	for (int translationX = 0; translationX < ARRAY_SIZE_OF(translations); ++translationX)
+	for (size_t translationX = 0; translationX < ARRAY_SIZE_OF(translations); ++translationX)
 	{
 		int xOffset = translations[translationX];
-		for (int translationY = 0; translationY < ARRAY_SIZE_OF(translations); ++translationY)
+		for (size_t translationY = 0; translationY < ARRAY_SIZE_OF(translations); ++translationY)
 		{
 			int yOffset = translations[translationY];
 			if (xOffset != 0 || yOffset != 0)
