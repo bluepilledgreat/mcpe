@@ -3,7 +3,6 @@
 #include "renderer/ShaderConstants.hpp"
 #include "common/utility/hashing/HashCombine.hpp"
 #include "common/Util.hpp"
-#include <sstream>
 #include "thirdparty/utf8proc/utf8proc.h"
 
 static const Color COLOR_FROM_CODES[] = {
@@ -1063,80 +1062,95 @@ int Font::widthSimple(const std::string& str) const
 
 std::vector<std::string> Font::split(const std::string& text, int maxWidth)
 {
-	std::vector<std::string> lines;
+	assert(maxWidth >= 8); // max character width should be 8
 
-	std::vector<std::string> paragraphs;
-	size_t start = 0;
-	size_t newlinePos = text.find('\n');
-	while (newlinePos != std::string::npos)
+	std::vector<std::string> result;
+
+	const uint8_t* from = reinterpret_cast<const uint8_t*>(text.data());
+	utf8proc_ssize_t copyCount = 0;
+	int lineWidth = 0;
+	int numOfConsecutiveSpaces = 0;
+
+	const uint8_t* data = reinterpret_cast<const uint8_t*>(text.c_str());
+	utf8proc_ssize_t len = text.size();
+
+	utf8proc_ssize_t charLen;
+	int c;
+	while ((charLen = utf8proc_iterate(data, len, &c)) > 0)
 	{
-		paragraphs.push_back(text.substr(start, newlinePos - start));
-		start = newlinePos + 1;
-		newlinePos = text.find('\n', start);
-	}
-	paragraphs.push_back(text.substr(start));
+		assert(c >= 0);
 
-	for (std::vector<std::string>::iterator it = paragraphs.begin(); it != paragraphs.end(); ++it)
-	{
-		std::string& paragraph = *it;
+		int cWidth;
 
-		if (paragraph.empty())
+		bool popLine = false;
+		bool skipCharacter = false;
+
+		if (c == '\n')
 		{
-			lines.push_back("");
-			continue;
+			popLine = true;
+			skipCharacter = true;
 		}
-
-		std::string currentLine;
-		std::istringstream iss(paragraph);
-		std::string word;
-
-		while (iss >> word)
+		else if (c == ' ' && copyCount == 0)
 		{
-			std::string testLine = currentLine.empty() ? word : currentLine + " " + word;
+			// trim from start
+			skipCharacter = true;
+			from += 1;
+		}
+		else
+		{
+			cWidth = m_charWidth[c];
 
-			if (width(testLine) <= maxWidth)
-				currentLine = testLine;
-			else
+			// only add spacing if this isn't the first character of the line
+			if (copyCount != 0)
+				cWidth += C_SPACING_BETWEEN_CHARS;
+
+			if (lineWidth + cWidth > maxWidth)
 			{
-				if (!currentLine.empty())
-				{
-					lines.push_back(currentLine);
-					currentLine.clear();
-				}
-
-				while (!word.empty() && width(word) > maxWidth)
-				{
-					size_t breakPos = 0;
-					for (size_t j = 1; j <= word.length(); ++j)
-					{
-						if (width(word.substr(0, j)) <= maxWidth)
-							breakPos = j;
-						else
-							break;
-					}
-
-					if (breakPos == 0) breakPos = 1;
-
-					std::string chunk = word.substr(0, breakPos);
-					lines.push_back(chunk);
-					word = word.substr(breakPos);
-				}
-
-				currentLine = word;
+				// character extends the current line's width past max width
+				popLine = true;
 			}
 		}
 
-		if (!currentLine.empty())
-			lines.push_back(currentLine);
+		if (skipCharacter)
+		{
+			// ignore this character right now!!!
+			// so we dont get included in the pop
+			data += charLen;
+			len -= charLen;
+		}
+
+		if (popLine)
+		{
+			copyCount -= numOfConsecutiveSpaces;
+			if (copyCount > 0)
+				result.push_back(std::string(reinterpret_cast<const char*>(from), copyCount));
+
+			copyCount = 0;
+			lineWidth = 0;
+			numOfConsecutiveSpaces = 0;
+			from = data;
+		}
+
+		if (!skipCharacter)
+		{
+			copyCount += charLen;
+			lineWidth += cWidth;
+
+			if (c == ' ')
+				numOfConsecutiveSpaces++;
+			else
+				numOfConsecutiveSpaces = 0;
+
+			data += charLen;
+			len -= charLen;
+		}
 	}
 
-	while (!lines.empty() && lines.back().empty())
-		lines.pop_back();
+	copyCount -= numOfConsecutiveSpaces;
+	if (copyCount > 0)
+		result.push_back(std::string(reinterpret_cast<const char*>(from), copyCount));
 
-	if (lines.empty())
-		lines.push_back("");
-
-	return lines;
+	return result;
 }
 
 bool Font::ContainsAsciiCharacters(const std::string& str)
