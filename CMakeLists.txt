@@ -27,7 +27,7 @@ if (ENABLE_WCXX11_EXTENSIONS)
     add_compile_options($<$<COMPILE_LANGUAGE:CXX>:-Wc++11-extensions>)
 endif()
 
-add_compile_options(-Wall -Wignored-qualifiers -Wvariadic-macros -pedantic -Wno-long-long -Wno-c++11-long-long -Wno-newline-eof -Wno-empty-translation-unit)
+add_compile_options(-Wall -Wignored-qualifiers -Wvariadic-macros -Wno-long-long -Wno-c++11-long-long -Wno-newline-eof -Wno-empty-translation-unit)
 
 if(WERROR)
     add_compile_options(-Werror)
