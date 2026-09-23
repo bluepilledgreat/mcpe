@@ -189,7 +189,7 @@ private:
 	{
 	public:
 		typedef std::vector<Line> LineList;
-		typedef HashMap<Color, std::vector<Line>> Map;
+		typedef HashMap<Color, std::vector<Line> > Map;
 
 	public:
 		Map lines;
