@@ -33,8 +33,8 @@ static const Color COLOR_FROM_CODES[] = {
 #define C_SPACING_BETWEEN_CHARS (uint8_t)2
 #define C_NEW_LINE_SPACING 2.0f // spacing on the Y-axis created by new lines
 #define C_ITALIC_SHIFT 3.0f // shifting by 3 looks fine on both ascii and unicode
-#define C_STRIKETHROUGH_Y_SHIFT (Font::RENDER_GLYPH_SIZE / 2.0f) - 1.0f
-#define C_UNDERLINE_Y_SHIFT Font::RENDER_GLYPH_SIZE
+#define C_STRIKETHROUGH_Y_SHIFT (C_FONT_RENDER_GLYPH_SIZE / 2.0f) - 1.0f
+#define C_UNDERLINE_Y_SHIFT C_FONT_RENDER_GLYPH_SIZE
 
 // character to use for characters not in our valid ranges
 #define C_UNK_CHAR 65533
@@ -81,10 +81,10 @@ void Font::GlyphQuad::append(Tesselator& t)
 	// if this glyph is italic, shift the top corner by X to the right
 	float shift = italic ? C_ITALIC_SHIFT : 0.0f;
 
-	t.vertexUV(x,                             y + RENDER_GLYPH_SIZE, 0.0f, u * D,                  (v + mapGlyphSize) * D);
-	t.vertexUV(x + RENDER_GLYPH_SIZE,         y + RENDER_GLYPH_SIZE, 0.0f, (u + mapGlyphSize) * D, (v + mapGlyphSize) * D);
-	t.vertexUV(x + RENDER_GLYPH_SIZE + shift, y,                     0.0f, (u + mapGlyphSize) * D, v * D);
-	t.vertexUV(x + shift,                     y,                     0.0f, u * D,                  v * D);
+	t.vertexUV(x,                                    y + C_FONT_RENDER_GLYPH_SIZE, 0.0f, u * D,                  (v + mapGlyphSize) * D);
+	t.vertexUV(x + C_FONT_RENDER_GLYPH_SIZE,         y + C_FONT_RENDER_GLYPH_SIZE, 0.0f, (u + mapGlyphSize) * D, (v + mapGlyphSize) * D);
+	t.vertexUV(x + C_FONT_RENDER_GLYPH_SIZE + shift, y,                     0.0f, (u + mapGlyphSize) * D, v * D);
+	t.vertexUV(x + shift,                            y,                     0.0f, u * D,                  v * D);
 }
 
 Font::TextObject::TextObject()
@@ -177,7 +177,7 @@ void Font::TextObjectGroup::adjustRenderPosition(float& x, float& y, bool isShad
 		// offset base mesh if we're rendering a shadow
 		if (isShadow)
 		{
-			float offset = hasUnicode ? (RENDER_GLYPH_SIZE / UNICODE_MAP_GLYPH_SIZE) : 1.0f;
+			float offset = hasUnicode ? (C_FONT_RENDER_GLYPH_SIZE / UNICODE_MAP_GLYPH_SIZE) : 1.0f;
 			x += offset;
 			y += offset;
 		}
@@ -267,7 +267,7 @@ Font::Font(Options* options, const std::string& fileName, Textures* textures)
 	, m_resetFormatOnBuild(true)
 	, m_pixelX(-1)
 	, m_pixelY(-1)
-	, m_unicodeShadowOffset(RENDER_GLYPH_SIZE / UNICODE_MAP_GLYPH_SIZE)
+	, m_unicodeShadowOffset(C_FONT_RENDER_GLYPH_SIZE / UNICODE_MAP_GLYPH_SIZE)
 {
 	m_recentTextObjectCaches.reserve(C_MAX_CACHE_SIZE);
 	_init(options);
@@ -353,7 +353,7 @@ void Font::_readUnicodeSizes(const std::string& filePath)
 	{
 		// these widths are for font size 16
 		// we render at font size 8
-		m_charWidth[i] = static_cast<uint8_t>(fileData[i] / (COMMON_MAP_DIMENSION / RENDER_GLYPH_SIZE)) + C_SPACING_BETWEEN_CHARS;
+		m_charWidth[i] = static_cast<uint8_t>(fileData[i] / (COMMON_MAP_DIMENSION / C_FONT_RENDER_GLYPH_SIZE)) + C_SPACING_BETWEEN_CHARS;
 	}
 }
 
@@ -424,7 +424,7 @@ float Font::_buildChar(int c, float x, float y, const Format& format, bool isSha
 
 	if (format.bold)
 	{
-		float widthAddition = isAscii ? 1.0f : (RENDER_GLYPH_SIZE / UNICODE_MAP_GLYPH_SIZE);
+		float widthAddition = isAscii ? 1.0f : (C_FONT_RENDER_GLYPH_SIZE / UNICODE_MAP_GLYPH_SIZE);
 		width += widthAddition;
 
 		for (int i = 0; i < 2; i++)
@@ -578,7 +578,7 @@ Font::TextObject* Font::_createTextObject(const std::string& str, const Color& c
 			}
 
 			x = 0.0f;
-			y += RENDER_GLYPH_SIZE + C_NEW_LINE_SPACING;
+			y += C_FONT_RENDER_GLYPH_SIZE + C_NEW_LINE_SPACING;
 
 			if (m_format.strikeThrough)
 				currentStrikeThroughLine = &m_strikeThroughLines.createLine(m_format.color, offset, y + offset);
@@ -807,7 +807,7 @@ void Font::drawSimple(const std::string& str, int x, int y, const Color& color, 
 		}
 		else if (c == '\n')
 		{
-			cYPos += RENDER_GLYPH_SIZE + C_NEW_LINE_SPACING;
+			cYPos += C_FONT_RENDER_GLYPH_SIZE + C_NEW_LINE_SPACING;
 			cXPos = 0;
 		}
 		else
@@ -959,7 +959,7 @@ int Font::height(const std::string& str) const
 	int height = 0;
 
 	int newLines = static_cast<int>(_CountNewLines(str));
-	height += (newLines + 1) * static_cast<int>(RENDER_GLYPH_SIZE);
+	height += (newLines + 1) * static_cast<int>(C_FONT_RENDER_GLYPH_SIZE);
 	height += newLines * static_cast<int>(C_NEW_LINE_SPACING);
 
 	return height;
@@ -1021,7 +1021,7 @@ int Font::heightSimple(const std::string& str) const
 	int height = 0;
 
 	int newLines = static_cast<int>(std::count(str.begin(), str.end(), '\n'));
-	height += (newLines + 1) * static_cast<int>(RENDER_GLYPH_SIZE);
+	height += (newLines + 1) * static_cast<int>(C_FONT_RENDER_GLYPH_SIZE);
 	height += newLines * static_cast<int>(C_NEW_LINE_SPACING);
 
 	return height;

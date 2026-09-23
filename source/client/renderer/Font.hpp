@@ -58,13 +58,13 @@ struct HashFunction<FontCacheKey>
 	size_t operator()(const FontCacheKey& key) const;
 };
 
+#define C_FONT_RENDER_GLYPH_SIZE 8.0f
+
 class Font
 {
 public:
 	static constexpr int NUM_ASCII_CHARS = 256; // Whole ASCII set
 	static constexpr int NUM_GLYPHS = 0x1FFFF + 1; // Plane 0 to 1
-
-	static constexpr float RENDER_GLYPH_SIZE = 8.0f;
 
 	// COMMON //
 	static constexpr int COMMON_MAP_DIMENSION = 16; // number of glyphs on one row/column
