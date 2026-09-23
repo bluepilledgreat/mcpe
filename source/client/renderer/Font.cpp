@@ -1178,7 +1178,7 @@ const Color& Font::_GetColorFromColorFormatCode(uint8_t c)
 {
 	assert(_IsColorFormatCode(c));
 
-	int index = c >= 'a' ? c - 'a' + 10 : c - '0';
+	size_t index = c >= 'a' ? c - 'a' + 10 : c - '0';
 	assert(index >= 0 && index < ARRAY_SIZE_OF(COLOR_FROM_CODES));
 
 	return COLOR_FROM_CODES[index];
