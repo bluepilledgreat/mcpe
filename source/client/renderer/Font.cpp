@@ -25,19 +25,19 @@ static const Color COLOR_FROM_CODES[] = {
 	Color::FromRGB(255, 255, 255)  // f - white
 };
 
-constexpr int MAX_CACHE_SIZE = 500;
+#define C_MAX_CACHE_SIZE 500
 
-constexpr uint8_t FORMATTING_START_CHARACTER = '\xa7';
+#define C_FORMATTING_START_CHARACTER (uint8_t)'\xa7'
 
-constexpr uint8_t SPACE_WIDTH = 2;
-constexpr uint8_t SPACING_BETWEEN_CHARS = 2;
-constexpr float NEW_LINE_SPACING = 2.0f; // spacing on the Y-axis created by new lines
-constexpr float ITALIC_SHIFT = 3.0f; // shifting by 3 looks fine on both ascii and unicode
-constexpr float STRIKETHROUGH_Y_SHIFT = (Font::RENDER_GLYPH_SIZE / 2.0f) - 1.0f;
-constexpr float UNDERLINE_Y_SHIFT = Font::RENDER_GLYPH_SIZE;
+#define C_SPACE_WIDTH (uint8_t)2
+#define C_SPACING_BETWEEN_CHARS (uint8_t)2
+#define C_NEW_LINE_SPACING 2.0f // spacing on the Y-axis created by new lines
+#define C_ITALIC_SHIFT 3.0f // shifting by 3 looks fine on both ascii and unicode
+#define C_STRIKETHROUGH_Y_SHIFT (Font::RENDER_GLYPH_SIZE / 2.0f) - 1.0f
+#define C_UNDERLINE_Y_SHIFT Font::RENDER_GLYPH_SIZE
 
 // character to use for characters not in our valid ranges
-constexpr int UNK_CHAR = 65533;
+#define C_UNK_CHAR 65533
 
 size_t HashFunction<Color>::operator()(const Color& key) const
 {
@@ -79,7 +79,7 @@ void Font::GlyphQuad::append(Tesselator& t)
 	const float D = (1.0f / mapSize);
 
 	// if this glyph is italic, shift the top corner by X to the right
-	float shift = italic ? ITALIC_SHIFT : 0.0f;
+	float shift = italic ? C_ITALIC_SHIFT : 0.0f;
 
 	t.vertexUV(x,                             y + RENDER_GLYPH_SIZE, 0.0f, u * D,                  (v + mapGlyphSize) * D);
 	t.vertexUV(x + RENDER_GLYPH_SIZE,         y + RENDER_GLYPH_SIZE, 0.0f, (u + mapGlyphSize) * D, (v + mapGlyphSize) * D);
@@ -269,7 +269,7 @@ Font::Font(Options* options, const std::string& fileName, Textures* textures)
 	, m_pixelY(-1)
 	, m_unicodeShadowOffset(RENDER_GLYPH_SIZE / UNICODE_MAP_GLYPH_SIZE)
 {
-	m_recentTextObjectCaches.reserve(MAX_CACHE_SIZE);
+	m_recentTextObjectCaches.reserve(C_MAX_CACHE_SIZE);
 	_init(options);
 }
 
@@ -303,7 +303,7 @@ void Font::_computeAsciiSizes()
 
 		if (c == ' ')
 		{
-			widthMax = SPACE_WIDTH;
+			widthMax = C_SPACE_WIDTH;
 		}
 		else
 		{
@@ -337,7 +337,7 @@ void Font::_computeAsciiSizes()
 			;
 		}
 
-		m_charWidth[c] = widthMax + SPACING_BETWEEN_CHARS;
+		m_charWidth[c] = widthMax + C_SPACING_BETWEEN_CHARS;
 	}
 }
 
@@ -353,7 +353,7 @@ void Font::_readUnicodeSizes(const std::string& filePath)
 	{
 		// these widths are for font size 16
 		// we render at font size 8
-		m_charWidth[i] = static_cast<uint8_t>(fileData[i] / (COMMON_MAP_DIMENSION / RENDER_GLYPH_SIZE)) + SPACING_BETWEEN_CHARS;
+		m_charWidth[i] = static_cast<uint8_t>(fileData[i] / (COMMON_MAP_DIMENSION / RENDER_GLYPH_SIZE)) + C_SPACING_BETWEEN_CHARS;
 	}
 }
 
@@ -407,7 +407,7 @@ float Font::_buildChar(int c, float x, float y, const Format& format, bool isSha
 
 	// ignore space characters (they are always empty so they don't need to be rendered)
 	if (c == ' ')
-		return static_cast<float>(SPACE_WIDTH);
+		return static_cast<float>(C_SPACE_WIDTH);
 
 	bool isAscii = _IsAsciiCharacter(c);
 	float width = static_cast<float>(m_charWidth[c]);
@@ -442,8 +442,8 @@ float Font::_buildChar(int c, float x, float y, const Format& format, bool isSha
 
 void Font::_buildLines(Tesselator& t)
 {
-	m_strikeThroughLines.append(*this, t, 1.0f, STRIKETHROUGH_Y_SHIFT);
-	m_underlineLines.append(*this, t, 1.0f, UNDERLINE_Y_SHIFT);
+	m_strikeThroughLines.append(*this, t, 1.0f, C_STRIKETHROUGH_Y_SHIFT);
+	m_underlineLines.append(*this, t, 1.0f, C_UNDERLINE_Y_SHIFT);
 }
 
 Font::TextObject* Font::_createTextObject(const std::string& str, const Color& color, bool isShadow)
@@ -481,9 +481,9 @@ Font::TextObject* Font::_createTextObject(const std::string& str, const Color& c
 		len -= charLen;
 
 		if (c >= NUM_GLYPHS)
-			c = UNK_CHAR;
+			c = C_UNK_CHAR;
 
-		if (c == FORMATTING_START_CHARACTER)
+		if (c == C_FORMATTING_START_CHARACTER)
 		{
 			if (len > 0)
 			{
@@ -578,7 +578,7 @@ Font::TextObject* Font::_createTextObject(const std::string& str, const Color& c
 			}
 
 			x = 0.0f;
-			y += RENDER_GLYPH_SIZE + NEW_LINE_SPACING;
+			y += RENDER_GLYPH_SIZE + C_NEW_LINE_SPACING;
 
 			if (m_format.strikeThrough)
 				currentStrikeThroughLine = &m_strikeThroughLines.createLine(m_format.color, offset, y + offset);
@@ -704,7 +704,7 @@ void Font::drawCached(const std::string& str, int x, int y, const Color& color, 
 		{
 			assert(!isInCache);
 
-			if (m_recentTextObjectCaches.size() > MAX_CACHE_SIZE)
+			if (m_recentTextObjectCaches.size() > C_MAX_CACHE_SIZE)
 			{
 				const FontCacheKey& oldestKey = *m_recentTextObjectCaches.begin();
 				m_textObjectCache.erase(oldestKey);
@@ -800,14 +800,14 @@ void Font::drawSimple(const std::string& str, int x, int y, const Color& color, 
 	{
 		uint8_t c = static_cast<uint8_t>(str[i]);
 
-		if (c == FORMATTING_START_CHARACTER)
+		if (c == C_FORMATTING_START_CHARACTER)
 		{
 			// skip format code too
 			i++;
 		}
 		else if (c == '\n')
 		{
-			cYPos += RENDER_GLYPH_SIZE + NEW_LINE_SPACING;
+			cYPos += RENDER_GLYPH_SIZE + C_NEW_LINE_SPACING;
 			cXPos = 0;
 		}
 		else
@@ -960,7 +960,7 @@ int Font::height(const std::string& str) const
 
 	int newLines = static_cast<int>(_CountNewLines(str));
 	height += (newLines + 1) * static_cast<int>(RENDER_GLYPH_SIZE);
-	height += newLines * static_cast<int>(NEW_LINE_SPACING);
+	height += newLines * static_cast<int>(C_NEW_LINE_SPACING);
 
 	return height;
 }
@@ -983,9 +983,9 @@ int Font::width(const std::string& str) const
 		len -= charLen;
 
 		if (c >= NUM_GLYPHS)
-			c = UNK_CHAR;
+			c = C_UNK_CHAR;
 
-		if (c == FORMATTING_START_CHARACTER)
+		if (c == C_FORMATTING_START_CHARACTER)
 		{
 			if (len > 0)
 			{
@@ -1022,7 +1022,7 @@ int Font::heightSimple(const std::string& str) const
 
 	int newLines = static_cast<int>(std::count(str.begin(), str.end(), '\n'));
 	height += (newLines + 1) * static_cast<int>(RENDER_GLYPH_SIZE);
-	height += newLines * static_cast<int>(NEW_LINE_SPACING);
+	height += newLines * static_cast<int>(C_NEW_LINE_SPACING);
 
 	return height;
 }
@@ -1036,7 +1036,7 @@ int Font::widthSimple(const std::string& str) const
 	{
 		uint8_t c = static_cast<uint8_t>(str[i]);
 
-		if (c == FORMATTING_START_CHARACTER)
+		if (c == C_FORMATTING_START_CHARACTER)
 		{
 			// skip format code
 			i++;
