@@ -672,3 +672,7 @@ target_link_libraries(nbcraft-core PUBLIC zlib-interface)
 
 # OGG Support
 target_link_libraries(nbcraft-core PUBLIC stb_vorbis)
+
+# utf8proc
+add_subdirectory(../thirdparty/utf8proc utf8proc)
+target_link_libraries(nbcraft-core PUBLIC utf8proc)
