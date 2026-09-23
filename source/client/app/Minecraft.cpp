@@ -45,7 +45,7 @@
 
 #include "renderer/RenderContextImmediate.hpp"
 #include "client/renderer/LogoRenderer.hpp"
-#include "client/renderer/ConsoleFont.hpp"
+#include "client/renderer/Font_Console.hpp"
 
 Minecraft* Minecraft::_singletonPtr;
 float Minecraft::_renderScaleMultiplier = 1.0f;
@@ -1467,7 +1467,7 @@ Font* Minecraft::_createFont(const std::string& fileName) const
 	switch (m_pOptions->getUiTheme())
 	{
 	case UI_CONSOLE:
-		return new ConsoleFont(m_pOptions, fileName, m_pTextures);
+		return new Font_Console(m_pOptions, fileName, m_pTextures);
 
 	default:
 		return new Font(m_pOptions, fileName, m_pTextures);

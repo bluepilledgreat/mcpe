@@ -1,16 +1,16 @@
-#include "client/renderer/ConsoleFont.hpp"
+#include "client/renderer/Font_Console.hpp"
 
-ConsoleFont::ConsoleFont(Options* options, const std::string& fileName, Textures* textures)
+Font_Console::Font_Console(Options* options, const std::string& fileName, Textures* textures)
 	: Font(options, fileName, textures)
 {
 	m_unicodeShadowOffset = 1.0f;
 }
 
-ConsoleFont::~ConsoleFont()
+Font_Console::~Font_Console()
 {
 }
 
-void ConsoleFont::drawScalableShadow(const std::string& str, int x, int y, const Color& color, float scale)
+void Font_Console::drawScalableShadow(const std::string& str, int x, int y, const Color& color, float scale)
 {
 	{
 		MatrixStack::Ref matrix = MatrixStack::World.push();
@@ -22,7 +22,7 @@ void ConsoleFont::drawScalableShadow(const std::string& str, int x, int y, const
 	drawScalable(str, x, y, color, scale, false);
 }
 
-void ConsoleFont::drawString(const std::string& str, int x, int y, const Color& color, bool hasShadow)
+void Font_Console::drawString(const std::string& str, int x, int y, const Color& color, bool hasShadow)
 {
 	if (hasShadow)
 	{
