@@ -79,6 +79,7 @@ add_library(nbcraft-core STATIC
     client/renderer/LightUpdate.cpp
     client/renderer/Fog.cpp
     client/renderer/Font.cpp
+    client/renderer/Font_Console.cpp
     client/renderer/WaterSideTexture.cpp
     client/renderer/TileRenderer.cpp
     client/renderer/LightLayer.cpp
