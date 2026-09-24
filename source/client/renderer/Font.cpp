@@ -1,3 +1,4 @@
+#include <stdexcept>
 #include "client/renderer/Font.hpp"
 #include "client/renderer/renderer/RenderMaterialGroup.hpp"
 #include "renderer/ShaderConstants.hpp"
