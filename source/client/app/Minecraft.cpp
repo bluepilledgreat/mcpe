@@ -50,8 +50,11 @@
 Minecraft* Minecraft::_singletonPtr;
 float Minecraft::_renderScaleMultiplier = 1.0f;
 
-int Minecraft::width  = C_DEFAULT_SCREEN_WIDTH;
-int Minecraft::height = C_DEFAULT_SCREEN_HEIGHT;
+ViewportSize Minecraft::_viewportSize =
+    ViewportSize(
+        C_DEFAULT_SCREEN_WIDTH, C_DEFAULT_SCREEN_HEIGHT,
+        C_DEFAULT_SCREEN_WIDTH, C_DEFAULT_SCREEN_HEIGHT
+    );
 bool Minecraft::useAmbientOcclusion = true;
 int Minecraft::customDebugId = 0;
 InputMethod::Type Minecraft::_inputMethod = InputMethod::KEYBOARD;
@@ -330,7 +333,7 @@ void Minecraft::setScreen(Screen* pScreen)
 	if (m_pScreen)
 	{
 		m_pScreen->removed();
-		if (pScreen && pScreen->m_bDeletePrevious)
+		if (!pScreen || (pScreen && pScreen->m_bDeletePrevious))
 			delete m_pScreen;
 	}
 
@@ -346,7 +349,7 @@ void Minecraft::setScreen(Screen* pScreen)
 		pScreen->init(this, Gui::GuiWidth, Gui::GuiHeight);
 	}
 
-	sizeUpdate(Minecraft::width, Minecraft::height);
+	sizeUpdate();
 
 	if (pScreen)
 	{
@@ -582,7 +585,9 @@ void Minecraft::tickInput()
 
 	if (!m_pInputHolder->allowsInputMethod(GetInputMethod()))
 		reloadInput();
-
+    
+    m_virtualKeyboardManager.tick();
+    
 	if (m_pScreen)
 	{
 		if (!m_pScreen->m_bPassEvents)
@@ -795,7 +800,7 @@ void Minecraft::handleTextPaste()
 void Minecraft::handlePointerLocation(MenuPointer::Unit x, MenuPointer::Unit y)
 {
 	if (m_pScreen)
-		m_pScreen->handlePointerLocation(x, y);
+		m_pScreen->handleRawPointerLocation(x, y);
 }
 
 void Minecraft::handlePointerPressedButtonPress()
@@ -925,7 +930,6 @@ void Minecraft::unloadLevel(bool bCopyMap)
 
 	m_pCameraEntity = m_pLocalPlayer = nullptr;
 
-
 	m_bUsingScreen = true;
 
 	if (bCopyMap)
@@ -948,7 +952,7 @@ void Minecraft::tick()
 	if (m_bPendingResize)
 	{
 		m_bPendingResize = false;
-		sizeUpdate(width, height);
+		sizeUpdate();
 	}
 
 	if (!m_pScreen)
@@ -1167,17 +1171,17 @@ void Minecraft::prepareLevel(const std::string& unused)
 	// " - prepr: ";
 }
 
-void Minecraft::sizeUpdate(int newWidth, int newHeight)
+void Minecraft::sizeUpdate()
 {
-	float baseScale = getBestScaleForThisScreenSize(newWidth, newHeight);
-	
-	// re-calculate the GUI scale.
-	Gui::GuiScale = baseScale / GetRenderScaleMultiplier();
+	const ViewportSize& size = GetViewportSize();
+
+    // re-calculate the GUI scale.
+	Gui::GuiScale = 1.0f / getBestScaleForThisScreenSize(size.logical.width, size.logical.height);
 
 	// The ceil gives an extra pixel to the screen's width and height, in case the GUI scale doesn't
 	// divide evenly into width or height, so that none of the game screen is uncovered.
-	float newGuiWidth = ceilf(Minecraft::width * Gui::GuiScale);
-	float newGuiHeight = ceilf(Minecraft::height * Gui::GuiScale);
+	float newGuiWidth  = ceilf(size.logical.width  * Gui::GuiScale);
+	float newGuiHeight = ceilf(size.logical.height * Gui::GuiScale);
 	
 	// GuiSize did not change, bail out
 	if (newGuiWidth == Gui::GuiWidth && newGuiHeight == Gui::GuiHeight)
@@ -1185,6 +1189,8 @@ void Minecraft::sizeUpdate(int newWidth, int newHeight)
 	
 	Gui::GuiWidth  = newGuiWidth;
 	Gui::GuiHeight = newGuiHeight;
+
+	LogoRenderer::singleton().build(Gui::GuiWidth);
 
 	if (m_pScreen)
 	{
@@ -1195,11 +1201,8 @@ void Minecraft::sizeUpdate(int newWidth, int newHeight)
 		m_pScreen->initMenuPointer();
 	}
 
-	LogoRenderer::singleton().build(Gui::GuiWidth);
-	
-
 	if (m_pInputHolder)
-		m_pInputHolder->setScreenSize(Minecraft::width, Minecraft::height);
+		m_pInputHolder->setScreenSize(size);
 }
 
 void Minecraft::setTextboxText(const std::string& text)
@@ -1208,7 +1211,7 @@ void Minecraft::setTextboxText(const std::string& text)
 		m_pScreen->setTextboxText(text);
 }
 
-float Minecraft::getBestScaleForThisScreenSize(int width, int height)
+float Minecraft::getBestScaleForThisScreenSize(unsigned int width, unsigned int height)
 {
 	if (m_pScreen)
 	{
@@ -1229,41 +1232,54 @@ float Minecraft::getBestScaleForThisScreenSize(int width, int height)
 		for (scale = 1; width / (scale + 1) >= 320 && height / (scale + 1) >= 240; ++scale)
 		{
 		}
-		return 1.0f / scale;
+		return scale;
 	}
 #endif
 
-	if (height > 1800)
-		return 1.0f / 8.0f;
+    if (height >= 1800)
+		return 8.0f;
 
 	if (useTouchscreen())
 	{
-		if (height > 1100)
-			return 1.0f / 6.0f;
+		/*
+        // Our custom (broken) logic
+        if (height >= 1100)
+			return 6.0f;
 
-		if (height > 900)
-			return 1.0f / 5.0f;
+		if (height >= 900)
+			return 5.0f;
 
-		if (height > 700)
-			return 1.0f / 4.0f;
+		if (height >= 700)
+			return 4.0f;
 
-		if (height > 500)
-			return 1.0f / 3.0f;
+		if (height >= 500)
+			return 3.0f;
 
-		if (height > 300)
-			return 1.0f / 2.0f;
+		if (height >= 300)
+			return 2.0f;
+        */
+        
+        // PE 0.3.3 logic
+        if (width >= 1000)
+            return 4.0f;
+        
+        if (width >= 800)
+            return 3.0f;
+        
+        if (width >= 400)
+            return 2.0f;
 	}
 	else
 	{
 		// @PARITY-JAVA: This is the screen scaling we use on non-touchscreen devices (minus Xboxes)
-		if (height > 1600)
-			return 1.0f / 4.0f;
+		if (height >= 1600)
+			return 4.0f;
 
-		if (height > 800)
-			return 1.0f / 3.0f;
+		if (height >= 800)
+			return 3.0f;
 
-		if (height > 400)
-			return 1.0f / 2.0f;
+		if (height >= 400)
+			return 2.0f;
 	}
 
 	return 1.0f;
@@ -1566,4 +1582,27 @@ void Minecraft::locateMultiplayer()
 	m_pRakNetInstance->pingForHosts(C_DEFAULT_PORT);
 	m_pNetEventCallback = new ClientSideNetworkHandler(this, m_pRakNetInstance);
 #endif
+}
+
+void Minecraft::SetViewportSize(unsigned int widthP, unsigned int heightP)
+{
+	SetViewportSize(
+		widthP,
+		heightP,
+		widthP  / GetRenderScaleMultiplier(),
+		heightP / GetRenderScaleMultiplier()
+	);
+}
+
+void Minecraft::SetViewportSize(unsigned int widthP, unsigned int heightP, unsigned int widthL, unsigned int heightL)
+{
+	Minecraft::_viewportSize.physical.width  = widthP;
+	Minecraft::_viewportSize.physical.height = heightP;
+
+	Minecraft::_viewportSize.logical.width   = widthL;
+	Minecraft::_viewportSize.logical.height  = heightL;
+
+	// recalculate the point to pixel scale.
+	// This currently assumes that the aspect ratio is the same.
+	SetRenderScaleMultiplier(float(widthP) / float(widthL));
 }
