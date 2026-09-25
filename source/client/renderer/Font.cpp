@@ -1132,10 +1132,6 @@ std::vector<std::string> Font::split(const std::string& text, int maxWidth)
 				addToWordCount = true;
 			}
 
-			// always assume there is a character before us, requiring spacing
-			// because this simplifies alot of logic with the current line and the next word that i don't want to do lol
-			cWidth += C_SPACING_BETWEEN_CHARS;
-
 			if (lineWidth + nextWordWidth + cWidth > maxWidth)
 			{
 				// character extends the current line's width past max width
