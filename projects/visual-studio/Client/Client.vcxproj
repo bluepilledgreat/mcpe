@@ -525,6 +525,7 @@
     </ProjectReference>
     <ProjectReference Include="..\utf8proc\utf8proc.vcxproj">
       <Project>{9482d455-4054-4907-a583-c57e33d7e57a}</Project>
+      <LinkLibraryDependencies>true</LinkLibraryDependencies>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

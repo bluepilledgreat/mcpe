@@ -1,6 +1,7 @@
 #include <stdexcept>
 #include "client/renderer/Font.hpp"
 #include "client/renderer/renderer/RenderMaterialGroup.hpp"
+#include "client/resources/Resource.hpp"
 #include "renderer/ShaderConstants.hpp"
 #include "common/utility/hashing/HashCombine.hpp"
 #include "common/Util.hpp"
@@ -281,7 +282,7 @@ void Font::_init(Options* pOpts)
 {
 	memset(m_charWidth, 0, sizeof(m_charWidth));
 	_computeAsciiSizes();
-	_readUnicodeSizes("assets/font/glyphs/glyph_sizes.bin");
+	_readUnicodeSizes("font/glyphs/glyph_sizes.bin");
 }
 
 void Font::_computeAsciiSizes()
@@ -343,10 +344,14 @@ void Font::_computeAsciiSizes()
 
 void Font::_readUnicodeSizes(const std::string& filePath)
 {
-	std::string fileData = AppPlatform::singleton()->readAssetFileStr(filePath, false);
+	std::string fileData;
+	Resource::load(filePath, fileData);
 
 	if (fileData.size() != NUM_GLYPHS)
+	{
+		LOG_E("Glyph file size is invalid. Got: %d, expected: %d", fileData.size(), NUM_GLYPHS);
 		throw std::runtime_error("Bad glyph sizes file");
+	}
 
 	// skip all ascii characters as their widths are computed in _computeAsciiSizes
 	for (int i = NUM_ASCII_CHARS; i < NUM_GLYPHS; ++i)
