@@ -1103,7 +1103,6 @@ std::vector<std::string> Font::split(const std::string& text, int maxWidth)
 
 			// copy the next word we have with the line
 			lineCopyCount += nextWordCopyCount;
-			// width will be reset later since we are popping
 
 			nextWordCopyCount = 0;
 			nextWordWidth = 0;
