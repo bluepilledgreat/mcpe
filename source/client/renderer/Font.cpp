@@ -1068,7 +1068,7 @@ int Font::widthSimple(const std::string& str) const
 
 std::vector<std::string> Font::split(const std::string& text, int maxWidth)
 {
-	assert(maxWidth >= 8); // max character width is 8
+	assert(maxWidth >= 8 + C_SPACING_BETWEEN_CHARS); // max character width is 8, +2 for spacing
 
 	std::vector<std::string> result;
 
