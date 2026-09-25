@@ -1126,19 +1126,15 @@ std::vector<std::string> Font::split(const std::string& text, int maxWidth)
 				nextWordCopyCount = 0;
 				nextWordWidth = 0;
 				numOfConsecutiveSpaces = 0;
-
-				// only add spacing if this isn't the first character of the line
-				if (lineCopyCount != 0)
-					cWidth += C_SPACING_BETWEEN_CHARS;
 			}
 			else
 			{
 				addToWordCount = true;
-
-				// only add spacing if this isn't the first character of the next word
-				if (nextWordCopyCount != 0)
-					cWidth += C_SPACING_BETWEEN_CHARS;
 			}
+
+			// always assume there is a character before us, requiring spacing
+			// because this simplifies alot of logic with the current line and the next word that i don't want to do lol
+			cWidth += C_SPACING_BETWEEN_CHARS;
 
 			if (lineWidth + nextWordWidth + cWidth > maxWidth)
 			{
