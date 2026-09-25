@@ -1068,13 +1068,17 @@ int Font::widthSimple(const std::string& str) const
 
 std::vector<std::string> Font::split(const std::string& text, int maxWidth)
 {
-	assert(maxWidth >= 8); // max character width should be 8
+	assert(maxWidth >= 8); // max character width is 8
 
 	std::vector<std::string> result;
 
 	const uint8_t* from = reinterpret_cast<const uint8_t*>(text.data());
-	utf8proc_ssize_t copyCount = 0;
+	utf8proc_ssize_t lineCopyCount = 0;
 	int lineWidth = 0;
+
+	utf8proc_ssize_t nextWordCopyCount = 0;
+	int nextWordWidth = 0;
+
 	int numOfConsecutiveSpaces = 0;
 
 	const uint8_t* data = reinterpret_cast<const uint8_t*>(text.c_str());
@@ -1090,13 +1094,22 @@ std::vector<std::string> Font::split(const std::string& text, int maxWidth)
 
 		bool popLine = false;
 		bool skipCharacter = false;
+		bool addToWordCount = false;
 
 		if (c == '\n')
 		{
 			popLine = true;
 			skipCharacter = true;
+
+			// copy the next word we have with the line
+			lineCopyCount += nextWordCopyCount;
+			// width will be reset later since we are popping
+
+			nextWordCopyCount = 0;
+			nextWordWidth = 0;
+			numOfConsecutiveSpaces = 0;
 		}
-		else if (c == ' ' && copyCount == 0)
+		else if (c == ' ' && (lineCopyCount == 0 && nextWordCopyCount == 0))
 		{
 			// trim from start
 			skipCharacter = true;
@@ -1105,56 +1118,106 @@ std::vector<std::string> Font::split(const std::string& text, int maxWidth)
 		else
 		{
 			cWidth = m_charWidth[c];
+			if (c == ' ')
+			{
+				// add next word to line
+				lineCopyCount += nextWordCopyCount;
+				lineWidth += nextWordWidth;
 
-			// only add spacing if this isn't the first character of the line
-			if (copyCount != 0)
-				cWidth += C_SPACING_BETWEEN_CHARS;
+				nextWordCopyCount = 0;
+				nextWordWidth = 0;
+				numOfConsecutiveSpaces = 0;
 
-			if (lineWidth + cWidth > maxWidth)
+				// only add spacing if this isn't the first character of the line
+				if (lineCopyCount != 0)
+					cWidth += C_SPACING_BETWEEN_CHARS;
+			}
+			else
+			{
+				addToWordCount = true;
+
+				// only add spacing if this isn't the first character of the next word
+				if (nextWordCopyCount != 0)
+					cWidth += C_SPACING_BETWEEN_CHARS;
+			}
+
+			if (lineWidth + nextWordWidth + cWidth > maxWidth)
 			{
 				// character extends the current line's width past max width
 				popLine = true;
+
+				if (lineCopyCount == 0)
+				{
+					assert(nextWordCopyCount != 0);
+
+					// we dont have any space for the next word on a completely blank line
+					// so we need to split it into multiple chunks
+					lineCopyCount = nextWordCopyCount;
+					lineWidth = nextWordWidth;
+
+					nextWordCopyCount = 0;
+					nextWordWidth = 0;
+					numOfConsecutiveSpaces = 0;
+				}
+
+				// skip spaces so they aren't copied after the pop
+				if (c == ' ')
+					skipCharacter = true;
 			}
 		}
 
 		if (skipCharacter)
 		{
-			// ignore this character right now!!!
-			// so we dont get included in the pop
+			// ignore this character right now
+			// so we dont start from this character after the pop
 			data += charLen;
 			len -= charLen;
 		}
 
 		if (popLine)
 		{
-			copyCount -= numOfConsecutiveSpaces;
-			if (copyCount > 0)
-				result.push_back(std::string(reinterpret_cast<const char*>(from), copyCount));
+			lineCopyCount -= numOfConsecutiveSpaces;
+			if (lineCopyCount > 0)
+				result.push_back(std::string(reinterpret_cast<const char*>(from), lineCopyCount));
 
-			copyCount = 0;
+			lineCopyCount = 0;
 			lineWidth = 0;
 			numOfConsecutiveSpaces = 0;
-			from = data;
+			from = data - nextWordCopyCount;
 		}
 
 		if (!skipCharacter)
 		{
-			copyCount += charLen;
-			lineWidth += cWidth;
-
-			if (c == ' ')
-				numOfConsecutiveSpaces++;
+			if (addToWordCount)
+			{
+				nextWordCopyCount += charLen;
+				nextWordWidth += cWidth;
+			}
 			else
-				numOfConsecutiveSpaces = 0;
+			{
+				lineCopyCount += charLen;
+				lineWidth += cWidth;
+
+				if (c == ' ')
+					numOfConsecutiveSpaces++;
+				else
+					numOfConsecutiveSpaces = 0;
+			}
 
 			data += charLen;
 			len -= charLen;
 		}
 	}
 
-	copyCount -= numOfConsecutiveSpaces;
-	if (copyCount > 0)
-		result.push_back(std::string(reinterpret_cast<const char*>(from), copyCount));
+	lineCopyCount += nextWordCopyCount;
+
+	// only trim if we don't have a next word
+	// since if we do, now we won't be ending with a space
+	if (nextWordCopyCount == 0)
+		lineCopyCount -= numOfConsecutiveSpaces;
+
+	if (lineCopyCount > 0)
+		result.push_back(std::string(reinterpret_cast<const char*>(from), lineCopyCount));
 
 	return result;
 }
