@@ -33,11 +33,6 @@
     <RootNamespace>utf8proc</RootNamespace>
     <ConfigurationType>StaticLibrary</ConfigurationType>
   </PropertyGroup>
-  <ItemDefinitionGroup>
-    <ClCompile>
-        <PreprocessorDefinitions>UTF8PROC_STATIC;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-    </ClCompile>
-  </ItemDefinitionGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <Import Project="..\NBCraft.Cpp.Default.props" />
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
