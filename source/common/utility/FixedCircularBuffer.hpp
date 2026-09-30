@@ -256,9 +256,9 @@ public:
 		}
 	};
 
-	friend iterator_base;
-	friend iterator;
-	friend const_iterator;
+	friend class iterator_base;
+	friend class iterator;
+	friend class const_iterator;
 
 	iterator begin()
 	{
