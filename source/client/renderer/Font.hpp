@@ -14,6 +14,7 @@
 #include "client/renderer/renderer/Tesselator.hpp"
 #include "client/renderer/texture/TextureData.hpp"
 #include "common/utility/HashMap.hpp"
+#include "common/utility/FixedCircularBuffer.hpp"
 #include "compat/LegacyCPP_Compat.hpp"
 #include <vector>
 #include <set>
@@ -59,6 +60,7 @@ struct HashFunction<FontCacheKey>
 };
 
 #define C_FONT_RENDER_GLYPH_SIZE 8.0f
+#define C_FONT_MAX_CACHE_SIZE 500
 
 class Font
 {
@@ -305,7 +307,7 @@ private:
 	std::set<int> m_usedGlyphMapQuads;
 
 	TextObjectCacheMap m_textObjectCache;
-	std::vector<FontCacheKey> m_recentTextObjectCaches; // TODO: circular buffer
+	FixedCircularBuffer<FontCacheKey, C_FONT_MAX_CACHE_SIZE> m_recentTextObjectCaches;
 	bool m_cachingEnabled;
 	bool m_resetFormatOnBuild;
 

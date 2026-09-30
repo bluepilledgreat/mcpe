@@ -26,8 +26,6 @@ static const Color COLOR_FROM_CODES[] = {
 	Color::FromRGB(255, 255, 255)  // f - white
 };
 
-#define C_MAX_CACHE_SIZE 500
-
 #define C_FORMATTING_START_CHARACTER (uint8_t)'\xa7'
 
 #define C_SPACE_WIDTH (uint8_t)2
@@ -270,7 +268,6 @@ Font::Font(Options* options, const std::string& fileName, Textures* textures)
 	, m_pixelY(-1)
 	, m_unicodeShadowOffset(C_FONT_RENDER_GLYPH_SIZE / UNICODE_MAP_GLYPH_SIZE)
 {
-	m_recentTextObjectCaches.reserve(C_MAX_CACHE_SIZE);
 	_init(options);
 }
 
@@ -710,11 +707,11 @@ void Font::drawCached(const std::string& str, int x, int y, const Color& color, 
 			(void)isInCache;
 			assert(!isInCache);
 
-			if (m_recentTextObjectCaches.size() > C_MAX_CACHE_SIZE)
+			if (m_recentTextObjectCaches.full())
 			{
-				const FontCacheKey& oldestKey = *m_recentTextObjectCaches.begin();
+				const FontCacheKey& oldestKey = m_recentTextObjectCaches.front();
 				m_textObjectCache.erase(oldestKey);
-				m_recentTextObjectCaches.erase(m_recentTextObjectCaches.begin());
+				m_recentTextObjectCaches.pop_front();
 			}
 
 			group = &m_textObjectCache[key];
